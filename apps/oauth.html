@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://unpkg.com/chota@0.9.2" />
+    <title>OAuth-aware app</title>
+  </head>
+
+  <body>
+    <div id="top" class="container">
+      <h1>OAuth-aware app</h1>
+      <div>
+        <div class="row">
+          <div class="col">Client ID:</div>
+          <div class="col-10">
+            <input type="text" id="client-id" value="envoy-public" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">OpenID configuration URL:</div>
+          <div class="col-10">
+            <input
+              type="text"
+              id="openid-well-known-url"
+              value="https://keycloak.127-0-0-15.nip.io/realms/envoy/.well-known/openid-configuration"
+            />
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">OAuth operations</div>
+        <div class="col-10">
+          <button id="login">Login</button>
+          <button id="refresh">Refresh</button>
+          <button id="logout">Logout</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">Path:</div>
+        <div class="col-10">
+          <input type="text" id="requestUrl" value="/protected" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">Body:</div>
+        <div class="col-10">
+          <textarea id="requestBody" rows="4">{ "message": "hello" }</textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">Request:</div>
+        <div class="col-10">
+          <button id="fetch-get">GET</button>
+          <button id="fetch-post">POST</button>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <button class="button primary" id="clear-log">Clear logs</button>
+          <button class="button primary" onclick="history.replaceState(null, null, ' ')">Clean fragment</button>
+        </div>
+      </div>
+
+      <div>
+        <h3>Logs</h3>
+        <div id="logs"></div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { OAuth, tokenStringify } from './oauth.js';
+      import { Logger } from './logger.js';
+
+      const log = new Logger(document.getElementById('logs'));
+
+      const oauthClient = new OAuth(
+        document.getElementById('client-id').value,
+        document.getElementById('openid-well-known-url').value,
+        window.location.origin + window.location.pathname, // redirect_uri
+        log
+      );
+
+      document.getElementById('clear-log').addEventListener('click', () => log.clear());
+
+      async function fetchResource(method) {
+        const url = document.getElementById('requestUrl').value;
+        const body = method === 'GET' ? undefined : JSON.parse(document.getElementById('requestBody').value);
+        try {
+          const request = {
+            method: method,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: oauthClient.accessToken ? `Bearer ${oauthClient.accessToken}` : '',
+            },
+            body: method === 'GET' ? undefined : JSON.stringify(body),
+          };
+          log.info(`Request ${method} to ${url}`, request.headers);
+
+          const response = await fetch(url, request);
+          log.info(`Response status: ${response.status}`, await response.text());
+        } catch (error) {
+          log.error(error);
+        }
+      }
+      document.getElementById('fetch-get').addEventListener('click', () => fetchResource('GET'));
+      document.getElementById('fetch-post').addEventListener('click', () => fetchResource('POST'));
+
+      // Load the login page when the login button is clicked.
+      document.getElementById('login').addEventListener('click', () => {
+        log.info('Loading login page');
+        oauthClient.loadLoginPage();
+      });
+
+      // Refresh the token when the refresh button is clicked.
+      document.getElementById('refresh').addEventListener('click', async () => {
+        log.info('Refreshing token');
+        try {
+          const response = await oauthClient.refresh();
+          log.info('Access token', tokenStringify(response.access_token));
+          log.info('Refresh token', tokenStringify(response.refresh_token));
+        } catch (error) {
+          log.error(error);
+        }
+      });
+
+      // Log out when the logout button is clicked.
+      document.getElementById('logout').addEventListener('click', () => {
+        log.info('Logging out');
+        oauthClient.logout();
+      });
+
+      // When the page loads, check if there is an authorization code in the URL.
+      try {
+        const response = await oauthClient.handleRedirect();
+        if (response) {
+          log.info('Token received from the authorization server');
+          log.info('Access token', tokenStringify(response.access_token));
+          log.info('Refresh token', tokenStringify(response.refresh_token));
+        } else {
+          log.info('No token received, please log in');
+        }
+      } catch (error) {
+        log.error(error);
+      }
+    </script>
+  </body>
+</html>

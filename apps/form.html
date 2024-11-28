@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://unpkg.com/chota@0.9.2" />
+    <title>Submit form</title>
+  </head>
+
+  <body>
+    <div id="top" class="container">
+      <h1>Submit form</h1>
+
+      <h3>post</h3>
+
+      <form action="/submit-post" method="post">
+        <div>
+          <label for="firstname">First name:</label>
+          <input type="text" name="firstname" value="John" required />
+        </div>
+        <div>
+          <label for="lastname">Last name:</label>
+          <input type="text" name="lastname" value="Doe" required />
+        </div>
+        <div>
+          <button type="submit" class="button primary">Submit POST</button>
+        </div>
+      </form>
+
+      <h3>get</h3>
+      <form action="/submit-get" method="get">
+        <div>
+          <label for="firstname">First name:</label>
+          <input type="text" name="firstname" value="John" required />
+        </div>
+        <div>
+          <label for="lastname">Last name:</label>
+          <input type="text" name="lastname" value="Doe" required />
+        </div>
+        <div>
+          <button type="submit" class="button primary">Submit GET</button>
+        </div>
+      </form>
+    </div>
+  </body>
+</html>
