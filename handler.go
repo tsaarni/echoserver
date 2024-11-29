@@ -99,18 +99,20 @@ func (h *Handler) HealthHandler(w http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling status request", "url", r.URL.String())
-	code := http.StatusBadRequest
 
 	re := regexp.MustCompile(`^/apps/status/(\d\d\d)$`)
 	match := re.FindStringSubmatch(r.RequestURI)
-	if match != nil {
-		code, _ = strconv.Atoi(match[1])
+	if match == nil {
+		slog.Warn("Error parsing status code /apps/status/{code}")
+		http.Error(w, "Invalid status code provided for /apps/status/{code}", http.StatusBadRequest)
+		return
 	}
+	code, _ := strconv.Atoi(match[1])
 
 	var headers map[string]string
 	if r.Body != nil {
 		if err := json.NewDecoder(r.Body).Decode(&headers); err != nil && err != io.EOF {
-			slog.Error("Error decoding JSON body", "error", err)
+			slog.Warn("Error decoding JSON body", "error", err)
 			http.Error(w, "Error decoding JSON body", http.StatusBadRequest)
 			return
 		}
