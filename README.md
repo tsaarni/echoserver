@@ -2,27 +2,23 @@
 
 This is a simple HTTP server that listens on incoming requests and echoes back information about the request.
 It is inspired by the [echoserver](https://github.com/kubernetes-sigs/ingress-controller-conformance/tree/master/images/echoserver) from the [ingress-controller-conformance](https://github.com/kubernetes-sigs/ingress-controller-conformance) project.
+Additionally, the server can be used to test authentication and authorization features in ingress controllers by providing clients that make requests to the echoserver.
 
-The server will respond to the following paths:
+## Usage
 
-- `/*` - Returns request details in JSON format, including headers and TLS information.
-- `/apps/health` - A `200 OK` status is returned, indicating the server is operational.
-- `/apps/status/{code}` - Returns the specified HTTP status code. Optionally, a JSON object (e.g., `{ "Location": "http://localhost/bar" }`) can be provided in the body to include additional HTTP headers in the response.
-- `/apps/fetch.html` - A JavaScript application that allows HTTP requests to be made using various methods and the responses to be viewed.
-- `/apps/form.html` - HTML form that allows data to be submitted using `POST` and `GET` methods.
-- `/apps/oauth.html` - OAuth2-aware JavaScript application, enabling authentication with the server using the Authorization Code flow and making authenticated requests.
+If you want to run the server locally and you have `go`, you can use the following command:
 
-## Deploying
+```sh
+go run github.com/tsaarni/echoserver@latest
+```
 
-Echoserver is available as a container image
+Echoserver is available as a container image:
 
 ```
 ghcr.io/tsaarni/tsaarni/echoserver:latest
 ```
 
-## Usage
-
-### Environment Variables
+The following environment variables can be used to configure the server:
 
 | Variable        | Description                                                                                                           | Default |
 | --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
@@ -32,17 +28,151 @@ ghcr.io/tsaarni/tsaarni/echoserver:latest
 | `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
 | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
 
-Environment variables that are used by the HTML pages are:
+The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and key files without restarting the server.
+
+The following environment variables are used when rendering the HTML pages:
 
 | Variable       | Description            | Default   |
 | -------------- | ---------------------- | --------- |
 | `ENV_HOSTNAME` | Hostname of the server | localhost |
 
-### Command Line Arguments
+Following command line arguments can be given to the server:
 
 | Argument | Description                                                                     | Default |
 | -------- | ------------------------------------------------------------------------------- | ------- |
 | `-live`  | Serve static files directly from the filesystem instead of using bundled files. | `false` |
+
+### API
+
+Following sections describe the API endpoints provided by the echoserver.
+
+#### `/*`
+
+Returns request details in JSON format, including headers and TLS information.
+
+<details>
+Example response:
+
+```json
+HTTP/1.1 200 OK
+Content-Length: 1644
+Content-Type: application/json
+Date: Thu, 28 Nov 2024 20:27:20 GMT
+
+{
+    "content_length": 0,
+    "env": {
+        "ENV_NAMESPACE": "mynamespace",
+        "ENV_POD": "mypod"
+    },
+    "header": {
+        "Accept": [
+            "*/*"
+        ],
+        "Accept-Encoding": [
+            "gzip, deflate, br"
+        ],
+        "Connection": [
+            "keep-alive"
+        ],
+        "User-Agent": [
+            "HTTPie/3.2.2"
+        ]
+    },
+    "host": "localhost:8443",
+    "method": "GET",
+    "proto": "HTTP/1.1",
+    "remote": "127.0.0.1:53378",
+    "tls": {
+        "alpn_negotiated_protocol": "http/1.1",
+        "cipher_suite": "TLS_AES_128_GCM_SHA256",
+        "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBSzCB8qADAgECAggYDDuSRtpjxTAKBggqhkjOPQQDAjASMRAwDgYDVQQDEwdy\nb290LWNhMB4XDTI0MTEyODIwMjQxNloXDTI1MTEyODIwMjQxNlowETEPMA0GA1UE\nAxMGY2xpZW50MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6pRXW7ZNf4Zzi3Qw\nlk4tpGQwi0alJCAKxloR1PfYei1Ixh74Qz2qsrvdTFM40S2CELW4QjRAt0KYA047\n8VWoRaMzMDEwDgYDVR0PAQH/BAQDAgWgMB8GA1UdIwQYMBaAFAif/mnSoWsFX550\nsiR5/dzToWrZMAoGCCqGSM49BAMCA0gAMEUCIQD2mtIiZ/a4TO80KdHDnOwlsWPf\nVuZxTcRNPyBF4F/lVwIgOD7pdL4NfJfRrouUTGvj4ST0+VY2kz2KrkpY0ckmdq4=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBWzCCAQKgAwIBAgIIGAw7kka+ahUwCgYIKoZIzj0EAwIwEjEQMA4GA1UEAxMH\ncm9vdC1jYTAeFw0yNDExMjgyMDI0MTZaFw0yNTExMjgyMDI0MTZaMBIxEDAOBgNV\nBAMTB3Jvb3QtY2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATUHqYZ2/Esrwf1\nL/+Pra4+q3mA5QeaAxzilwJvm/5Wjk3C+oxTBqgIiRErKQ7DTxkC0U3c5d5/Og6o\nZwGmYXOqo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNV\nHQ4EFgQUCJ/+adKhawVfnnSyJHn93NOhatkwCgYIKoZIzj0EAwIDRwAwRAIgKAsF\nvgXxODXq5f6jUnIC7muCb/t6zKc0DbM+kTWo0dYCIAIPMKBuXtZVskFjty0zV/H7\nNMK3WmY4Veyco3eUSiQN\n-----END CERTIFICATE-----\n",
+        "version": "TLS 1.3"
+    },
+    "url": "/foobar"
+}
+```
+
+</details>
+
+#### `/apps/health`
+
+A `200 OK` status is returned, indicating the server is operational.
+
+<details>
+Example response:
+
+```json
+HTTP/1.1 404 Not Found
+Content-Length: 15
+Content-Type: text/plain; charset=utf-8
+Date: Fri, 29 Nov 2024 06:08:54 GMT
+X-Content-Type-Options: nosniff
+
+File not found
+```
+
+</details>
+
+#### `/apps/status/{code}`
+
+Returns the specified HTTP status code. Optionally, a JSON object can be provided in the body to include additional HTTP headers in the response.
+
+<details>
+Example request:
+
+```sh
+$ http POST http://localhost:8080/apps/status/301 Location=http://localhost/bar
+```
+
+Body of the request
+
+```
+{
+  "Location": "http://localhost/bar"
+}
+```
+
+Response:
+
+```json
+HTTP/1.1 301 Moved Permanently
+Content-Length: 0
+Date: Fri, 29 Nov 2024 06:10:25 GMT
+Location: http://localhost/bar
+```
+
+</details>
+
+#### `/apps/fetch.html`
+
+A JavaScript application that allows HTTP requests to be made using various methods and the responses to be viewed.
+
+<details>
+
+![image](https://github.com/user-attachments/assets/1c325a58-2829-4549-8f70-d411b562190c)
+
+</details>
+
+#### `/apps/form.html`
+
+HTML form that allows data to be submitted using `POST` and `GET` methods.
+
+<details>
+
+![image](https://github.com/user-attachments/assets/46d5deb3-e9f5-4f34-a114-3d9ab0219e0b)
+
+</details>
+
+#### `/apps/oauth.html`
+
+OAuth2-aware JavaScript application, enabling authentication with the server using the Authorization Code flow and making authenticated requests.
+
+<details>
+
+![image](https://github.com/user-attachments/assets/31f5da4b-e064-4ce4-89e8-9d28a7230716)
+
+</details>
 
 ## Development
 
