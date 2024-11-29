@@ -40,7 +40,7 @@ func (h *Handler) EchoHandler(w http.ResponseWriter, r *http.Request) {
 		"method":         r.Method,
 		"url":            r.URL.String(),
 		"proto":          r.Proto,
-		"header":         r.Header,
+		"headers":        r.Header,
 		"host":           r.Host,
 		"remote":         r.RemoteAddr,
 		"content_length": r.ContentLength,

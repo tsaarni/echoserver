@@ -66,7 +66,7 @@ $ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://
     "ENV_NAMESPACE": "mynamespace",
     "ENV_POD": "mypod"
   },
-  "header": {
+  "headers": {
     "Accept": ["*/*"],
     "Accept-Encoding": ["gzip, deflate, br"],
     "Connection": ["keep-alive"],
