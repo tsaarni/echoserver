@@ -44,82 +44,85 @@ Following command line arguments can be given to the server:
 
 ### API
 
-Following sections describe the API endpoints provided by the echoserver.
-
-#### `/*`
-
-Returns request details in JSON format, including headers and TLS information.
-
 <details>
-Example response:
+<summary><code>/*</code> Returns request details in JSON format, including headers and TLS information.</summary>
+
+#### Responses
+
+| Status | Description                     |
+| ------ | ------------------------------- |
+| 200 OK | Request details in JSON format. |
+
+##### Example
+
+```console
+$ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://localhost:8443/foobar
+```
 
 ```json
-HTTP/1.1 200 OK
-Content-Length: 1644
-Content-Type: application/json
-Date: Thu, 28 Nov 2024 20:27:20 GMT
-
 {
-    "content_length": 0,
-    "env": {
-        "ENV_NAMESPACE": "mynamespace",
-        "ENV_POD": "mypod"
-    },
-    "header": {
-        "Accept": [
-            "*/*"
-        ],
-        "Accept-Encoding": [
-            "gzip, deflate, br"
-        ],
-        "Connection": [
-            "keep-alive"
-        ],
-        "User-Agent": [
-            "HTTPie/3.2.2"
-        ]
-    },
-    "host": "localhost:8443",
-    "method": "GET",
-    "proto": "HTTP/1.1",
-    "remote": "127.0.0.1:53378",
-    "tls": {
-        "alpn_negotiated_protocol": "http/1.1",
-        "cipher_suite": "TLS_AES_128_GCM_SHA256",
-        "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBSzCB8qADAgECAggYDDuSRtpjxTAKBggqhkjOPQQDAjASMRAwDgYDVQQDEwdy\nb290LWNhMB4XDTI0MTEyODIwMjQxNloXDTI1MTEyODIwMjQxNlowETEPMA0GA1UE\nAxMGY2xpZW50MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6pRXW7ZNf4Zzi3Qw\nlk4tpGQwi0alJCAKxloR1PfYei1Ixh74Qz2qsrvdTFM40S2CELW4QjRAt0KYA047\n8VWoRaMzMDEwDgYDVR0PAQH/BAQDAgWgMB8GA1UdIwQYMBaAFAif/mnSoWsFX550\nsiR5/dzToWrZMAoGCCqGSM49BAMCA0gAMEUCIQD2mtIiZ/a4TO80KdHDnOwlsWPf\nVuZxTcRNPyBF4F/lVwIgOD7pdL4NfJfRrouUTGvj4ST0+VY2kz2KrkpY0ckmdq4=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBWzCCAQKgAwIBAgIIGAw7kka+ahUwCgYIKoZIzj0EAwIwEjEQMA4GA1UEAxMH\ncm9vdC1jYTAeFw0yNDExMjgyMDI0MTZaFw0yNTExMjgyMDI0MTZaMBIxEDAOBgNV\nBAMTB3Jvb3QtY2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATUHqYZ2/Esrwf1\nL/+Pra4+q3mA5QeaAxzilwJvm/5Wjk3C+oxTBqgIiRErKQ7DTxkC0U3c5d5/Og6o\nZwGmYXOqo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNV\nHQ4EFgQUCJ/+adKhawVfnnSyJHn93NOhatkwCgYIKoZIzj0EAwIDRwAwRAIgKAsF\nvgXxODXq5f6jUnIC7muCb/t6zKc0DbM+kTWo0dYCIAIPMKBuXtZVskFjty0zV/H7\nNMK3WmY4Veyco3eUSiQN\n-----END CERTIFICATE-----\n",
-        "version": "TLS 1.3"
-    },
-    "url": "/foobar"
+  "content_length": 0,
+  "env": {
+    "ENV_NAMESPACE": "mynamespace",
+    "ENV_POD": "mypod"
+  },
+  "header": {
+    "Accept": ["*/*"],
+    "Accept-Encoding": ["gzip, deflate, br"],
+    "Connection": ["keep-alive"],
+    "User-Agent": ["HTTPie/3.2.2"]
+  },
+  "host": "localhost:8443",
+  "method": "GET",
+  "proto": "HTTP/1.1",
+  "remote": "127.0.0.1:53378",
+  "tls": {
+    "alpn_negotiated_protocol": "http/1.1",
+    "cipher_suite": "TLS_AES_128_GCM_SHA256",
+    "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBSzCB8qADAgECAggYDDuSRtpjxTAKBggqhkjOPQQDAjASMRAwDgYDVQQDEwdy\nb290LWNhMB4XDTI0MTEyODIwMjQxNloXDTI1MTEyODIwMjQxNlowETEPMA0GA1UE\nAxMGY2xpZW50MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6pRXW7ZNf4Zzi3Qw\nlk4tpGQwi0alJCAKxloR1PfYei1Ixh74Qz2qsrvdTFM40S2CELW4QjRAt0KYA047\n8VWoRaMzMDEwDgYDVR0PAQH/BAQDAgWgMB8GA1UdIwQYMBaAFAif/mnSoWsFX550\nsiR5/dzToWrZMAoGCCqGSM49BAMCA0gAMEUCIQD2mtIiZ/a4TO80KdHDnOwlsWPf\nVuZxTcRNPyBF4F/lVwIgOD7pdL4NfJfRrouUTGvj4ST0+VY2kz2KrkpY0ckmdq4=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBWzCCAQKgAwIBAgIIGAw7kka+ahUwCgYIKoZIzj0EAwIwEjEQMA4GA1UEAxMH\ncm9vdC1jYTAeFw0yNDExMjgyMDI0MTZaFw0yNTExMjgyMDI0MTZaMBIxEDAOBgNV\nBAMTB3Jvb3QtY2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATUHqYZ2/Esrwf1\nL/+Pra4+q3mA5QeaAxzilwJvm/5Wjk3C+oxTBqgIiRErKQ7DTxkC0U3c5d5/Og6o\nZwGmYXOqo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNV\nHQ4EFgQUCJ/+adKhawVfnnSyJHn93NOhatkwCgYIKoZIzj0EAwIDRwAwRAIgKAsF\nvgXxODXq5f6jUnIC7muCb/t6zKc0DbM+kTWo0dYCIAIPMKBuXtZVskFjty0zV/H7\nNMK3WmY4Veyco3eUSiQN\n-----END CERTIFICATE-----\n",
+    "version": "TLS 1.3"
+  },
+  "url": "/foobar"
 }
 ```
 
 </details>
 
-#### `/apps/health`
-
-A `200 OK` status is returned, indicating the server is operational.
-
 <details>
-Example response:
+<summary><code>/apps/health</code> Returns a `200 OK` status, indicating the server is operational.</summary>
 
-```json
-HTTP/1.1 404 Not Found
-Content-Length: 15
-Content-Type: text/plain; charset=utf-8
-Date: Fri, 29 Nov 2024 06:08:54 GMT
-X-Content-Type-Options: nosniff
+#### Responses
 
-File not found
+| Status | Description            |
+| ------ | ---------------------- |
+| 200 OK | Server is operational. |
+
+#### Example
+
+```console
+$ http GET http://localhost:8080/apps/health
+```
+
+```http
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: Fri, 29 Nov 2024 06:24:46 GMT
 ```
 
 </details>
 
-#### `/apps/status/{code}`
-
-Returns the specified HTTP status code. Optionally, a JSON object can be provided in the body to include additional HTTP headers in the response.
-
 <details>
-Example request:
+<summary><code>/apps/status/{code}</code> Returns the specified HTTP status code.</summary>
+
+#### Parameters
+
+| Name | Description                 |
+| ---- | --------------------------- |
+| code | HTTP status code to return. |
+
+Optionally, a JSON object can be provided in the body to include additional HTTP headers in the response.
+
+#### Example
 
 ```sh
 $ http POST http://localhost:8080/apps/status/301 Location=http://localhost/bar
@@ -127,7 +130,7 @@ $ http POST http://localhost:8080/apps/status/301 Location=http://localhost/bar
 
 Body of the request
 
-```
+```json
 {
   "Location": "http://localhost/bar"
 }
@@ -135,7 +138,7 @@ Body of the request
 
 Response:
 
-```json
+```http
 HTTP/1.1 301 Moved Permanently
 Content-Length: 0
 Date: Fri, 29 Nov 2024 06:10:25 GMT
@@ -144,35 +147,35 @@ Location: http://localhost/bar
 
 </details>
 
-#### `/apps/fetch.html`
-
-A JavaScript application that allows HTTP requests to be made using various methods and the responses to be viewed.
-
 <details>
+<summary><code>/apps/fetch.html</code> Interactive HTTP request tool.</summary>
+
+A JavaScript application that enables users to make HTTP requests towards the echoserver using different methods and view the responses.
 
 ![image](https://github.com/user-attachments/assets/1c325a58-2829-4549-8f70-d411b562190c)
 
 </details>
 
-#### `/apps/form.html`
-
-HTML form that allows data to be submitted using `POST` and `GET` methods.
-
 <details>
+<summary><code>/apps/form.html</code> HTML form submission.</summary>
+
+An HTML form that enables data submission using both `POST` and `GET` methods towards the echoserver.
 
 ![image](https://github.com/user-attachments/assets/46d5deb3-e9f5-4f34-a114-3d9ab0219e0b)
 
 </details>
 
-#### `/apps/oauth.html`
-
-OAuth2-aware JavaScript application, enabling authentication with the server using the Authorization Code flow and making authenticated requests.
-
 <details>
+<summary><code>/apps/oauth.html</code> Interactive Oauth2 client.</summary>
+
+OAuth2-aware JavaScript application that implements the Authorization Code flow.
+It allows users to interactively trigger login/refresh/logout and to make authenticated requests towards the echoserver and view the responses.
 
 ![image](https://github.com/user-attachments/assets/31f5da4b-e064-4ce4-89e8-9d28a7230716)
 
 </details>
+
+Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
 
 ## Development
 
