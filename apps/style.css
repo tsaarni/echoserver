@@ -1,0 +1,78 @@
+:root {
+  --background-color: #fff;
+  --text-color: #333;
+  --text-color-inverse: #fff;
+  --label-text-color: #777;
+  --border-color: #ccc;
+  --button-color: #1a5;
+  --warn-color: #f22;
+  --code-background-color: #f8f8f8;
+  --code-font-family: 'Courier New', monospace;
+  --code-font-size: 14px;
+}
+
+* {
+  font-family: Arial, sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+body {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 10px;
+}
+
+.form-container {
+  display: grid;
+  grid-template-columns: [labels] auto [controls] 1fr;
+  grid-gap: 0.75em;
+  padding: 1em;
+  border: 1px solid var(--border-color);
+}
+
+.form-container label {
+  padding-top: 0.5em;
+  grid-column: labels;
+  color: var(--label-text-color);
+}
+
+.form-container input,
+.form-container textarea {
+  font-size: 15px;
+  grid-column: controls;
+  padding: 0.5em;
+  border: 1px solid var(--border-color);
+}
+
+.form-container fieldset {
+  grid-column: span 2;
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+button {
+  padding: 0.7em 1.2em;
+  border: none;
+  background-color: var(--button-color);
+  color: var(--text-color-inverse);
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button:active {
+  transform: scale(0.95);
+}
+
+.warn {
+  background-color: var(--warn-color);
+}
+
+pre {
+  background-color: var(--code-background-color);
+  border: none;
+  font-family: var(--code-font-family);
+  font-size: var(--code-font-size);
+  white-space: pre-wrap;
+}
