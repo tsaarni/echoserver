@@ -2,19 +2,27 @@
   --background-color: #fff;
   --text-color: #333;
   --text-color-inverse: #fff;
+  --link-color: #2d7f38;
   --label-text-color: #777;
   --border-color: #ccc;
   --button-color: #1a5;
   --warn-color: #f22;
-  --code-background-color: #f8f8f8;
-  --code-font-family: 'Courier New', monospace;
-  --code-font-size: 14px;
+
+  --logger-font-size: 0.9em;
+  --logger-border-color: var(--border-color);
+  --logger-payload-font-family: 'Courier New', monospace;
+  --logger-error-color: var(--warn-color);
+  --logger-hover-color: #ddd;
 }
 
 * {
   font-family: Arial, sans-serif;
   background-color: var(--background-color);
   color: var(--text-color);
+}
+
+a {
+  color: var(--link-color);
 }
 
 body {
@@ -29,6 +37,7 @@ body {
   grid-gap: 0.75em;
   padding: 1em;
   border: 1px solid var(--border-color);
+  margin-bottom: 1em;
 }
 
 .form-container label {
@@ -46,10 +55,13 @@ body {
 }
 
 .form-container fieldset {
-  grid-column: span 2;
   border: none;
   padding: 0;
   margin: 0;
+}
+
+.form-container fieldset.grid-row {
+  grid-column: 1 / -1;
 }
 
 button {
@@ -67,12 +79,4 @@ button:active {
 
 .warn {
   background-color: var(--warn-color);
-}
-
-pre {
-  background-color: var(--code-background-color);
-  border: none;
-  font-family: var(--code-font-family);
-  font-size: var(--code-font-size);
-  white-space: pre-wrap;
 }

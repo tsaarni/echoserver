@@ -3,71 +3,49 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://unpkg.com/chota@0.9.2" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="logger.css" />
     <title>OAuth-aware app</title>
   </head>
 
   <body>
-    <div id="top" class="container">
-      <h1>OAuth-aware app</h1>
-      <div>
-        <div class="row">
-          <div class="col">Client ID:</div>
-          <div class="col-10">
-            <input type="text" id="client-id" value="envoy-public" />
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">OpenID configuration URL:</div>
-          <div class="col-10">
-            <input
-              type="text"
-              id="openid-well-known-url"
-              value="https://keycloak.127-0-0-15.nip.io/realms/envoy/.well-known/openid-configuration"
-            />
-          </div>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col">OAuth operations</div>
-        <div class="col-10">
-          <button id="login">Login</button>
-          <button id="refresh">Refresh</button>
-          <button id="logout">Logout</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col">Path:</div>
-        <div class="col-10">
-          <input type="text" id="requestUrl" value="/protected" />
-        </div>
-      </div>
+    <h1>OAuth-aware app</h1>
 
-      <div class="row">
-        <div class="col">Body:</div>
-        <div class="col-10">
-          <textarea id="requestBody" rows="4">{ "message": "hello" }</textarea>
-        </div>
-      </div>
+    <div class="form-container">
+      <label for="client-id">Client ID:</label>
+      <input type="text" id="client-id" value="envoy-public" />
+      <label for="openid-well-known-url">Well-known URL:</label>
+      <input
+        type="text"
+        id="openid-well-known-url"
+        value="https://keycloak.127-0-0-15.nip.io/realms/envoy/.well-known/openid-configuration"
+      />
+      <label for="oauth-operation">OAuth operations:</label>
+      <fieldset id="oauth-operation">
+        <button id="login">Login</button>
+        <button id="refresh">Refresh</button>
+        <button id="logout">Logout</button>
+      </fieldset>
 
-      <div class="row">
-        <div class="col">Request:</div>
-        <div class="col-10">
-          <button id="fetch-get">GET</button>
-          <button id="fetch-post">POST</button>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col">
-          <button class="button primary" id="clear-log">Clear logs</button>
-          <button class="button primary" onclick="history.replaceState(null, null, ' ')">Clean fragment</button>
-        </div>
-      </div>
+      <label for="requestUrl">Path:</label>
+      <input type="text" id="requestUrl" value="/protected" />
+      <label for="requestBody">Body:</label>
+      <textarea id="requestBody" rows="4">{ "message": "hello" }</textarea>
+      <label for="request">Request:</label>
+      <fieldset id="request">
+        <button id="fetch-get">GET</button>
+        <button id="fetch-post">POST</button>
+      </fieldset>
 
-      <div>
-        <h3>Logs</h3>
-        <div id="logs"></div>
-      </div>
+      <fieldset class="grid-row">
+        <button id="clear-log" class="warn">clear logs</button>
+        <button class="warn" onclick="history.replaceState(null, null, ' ')">clear fragment</button>
+      </fieldset>
+    </div>
+
+    <div>
+      <h3>Logs</h3>
+      <div id="logs"></div>
     </div>
 
     <script type="module">

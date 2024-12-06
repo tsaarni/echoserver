@@ -1,0 +1,58 @@
+.logger {
+  margin-top: 1em;
+  display: grid;
+  grid-template-columns: [time] auto [level] auto [message] 1fr;
+  font-size: var(--logger-font-size);
+}
+
+.logger .log-entry {
+  display: contents;
+}
+
+.logger .log-entry:hover * {
+  background-color: var(--logger-hover-color);
+}
+
+.logger .payload .line:hover {
+  background-color: #fff;
+}
+
+.logger .time {
+  grid-column: time;
+  padding: 0 0.5em;
+  border-right: 1px solid var(--logger-border-color);
+}
+
+.logger .level {
+  grid-column: level;
+  padding: 0 0.5em;
+  border-right: 1px solid var(--logger-border-color);
+}
+
+.logger .message {
+  grid-column: message;
+  padding: 0 0.5em;
+}
+
+.logger .payload {
+  padding: 0 0.5em;
+  grid-column: 1 / -1;
+}
+
+.logger .payload .line-number {
+  padding: 0 0.5em;
+  width: 2em;
+  border-right: 1px solid var(--logger-border-color);
+  display: inline-block;
+}
+
+.logger .payload .line {
+  padding: 0 0.5em;
+  white-space: pre-wrap;
+  font-family: var(--logger-payload-font-family);
+  font-size: var(--logger-font-size);
+}
+
+.logger .log-entry.error * {
+  color: var(--logger-error-color);
+}

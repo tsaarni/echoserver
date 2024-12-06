@@ -1,57 +1,80 @@
 class Logger {
   constructor(div) {
-    this.div = div;
+    this.container = div;
+    this.container.classList.add('logger');
   }
 
   info(message, payload = null) {
-    const timestamp = new Date().toLocaleString(navigator.language);
-    const entry = document.createElement('div');
-
-    if (payload) {
-      entry.innerHTML = `${timestamp} [INFO] ${message} ${stringifyPayload(payload)}<p>`;
-    } else {
-      entry.innerHTML = `${timestamp} [INFO] ${message}<p>`;
-    }
-
-    this.div.appendChild(entry);
+    this.#log('INFO', message, payload);
   }
 
   error(message, payload = null) {
-    const timestamp = new Date().toLocaleString(navigator.language);
+    this.#log('ERROR', message, payload);
+  }
+
+  #log(level, message, payload = null) {
+    const date = new Date();
+    const timestamp = date.toLocaleTimeString() + '.' + date.getMilliseconds().toString().padStart(3, '0');
+
+    const timestampSpan = document.createElement('span');
+    timestampSpan.className = 'time';
+    timestampSpan.textContent = timestamp;
+
+    const levelSpan = document.createElement('span');
+    levelSpan.className = `level`;
+    levelSpan.textContent = `[${level}]`;
+
+    const messageSpan = document.createElement('span');
+    messageSpan.className = 'message';
+    messageSpan.textContent = message;
+
     const entry = document.createElement('div');
+    entry.className = `log-entry ${level.toLowerCase()}`;
+    entry.appendChild(timestampSpan);
+    entry.appendChild(levelSpan);
+    entry.appendChild(messageSpan);
 
     if (payload) {
-      entry.innerHTML = `${timestamp} [ERROR] ${message} ${stringifyPayload(payload)}<p>`;
-    } else {
-      entry.innerHTML = `${timestamp} [ERROR] ${message}<p>`;
+      entry.appendChild(stringifyPayload(payload));
     }
-    entry.style.color = 'red';
 
-    this.div.appendChild(entry);
+    this.container.appendChild(entry);
   }
 
   clear() {
-    this.div.innerHTML = '';
+    this.container.innerHTML = '';
   }
 }
 
 function stringifyPayload(payload) {
-  const pre = document.createElement('pre');
-
   try {
     payload = JSON.parse(payload);
   } catch {
-    // Not JSON string
+    // Not JSON string.
   }
 
-  try {
+  // If payload is an object, pretty print it.
+  if (typeof payload === 'object') {
     payload = JSON.stringify(payload, null, 2);
-  } catch {
-    // Not object
   }
-  pre.innerHTML = payload;
 
-  return pre.outerHTML;
+  const lines = payload.split('\n');
+  const formattedPayload = document.createElement('div');
+  formattedPayload.className = 'payload';
+
+  lines.forEach((line, index) => {
+    const lineNumSpan = document.createElement('span');
+    lineNumSpan.className = 'line-number';
+    lineNumSpan.textContent = index + 1;
+    formattedPayload.appendChild(lineNumSpan);
+    const lineSpan = document.createElement('span');
+    lineSpan.className = 'line';
+    lineSpan.textContent = line;
+    formattedPayload.appendChild(lineSpan);
+    formattedPayload.appendChild(document.createElement('br'));
+  });
+
+  return formattedPayload;
 }
 
 export { Logger };
