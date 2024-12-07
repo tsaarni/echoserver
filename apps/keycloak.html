@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="logger.css" />
+    <title>Keycloak client app</title>
+  </head>
+
+  <body>
+    <h1>Keycloak client app</h1>
+
+    <div class="form-container">
+      <label for="keycloak-url">Keycloak URL:</label>
+      <input type="text" id="keycloak-url" value="https://keycloak.127-0-0-15.nip.io" />
+      <label for="realm">Realm:</label>
+      <input type="text" id="realm" value="envoy" />
+      <label for="client-id">Client ID:</label>
+      <input type="text" id="client-id" value="envoy-public" />
+
+      <label for="oauth-operation">OAuth operations:</label>
+      <fieldset id="oauth-operation">
+        <button id="login">Login</button>
+        <button id="update">Update</button>
+        <button id="logout">Logout</button>
+      </fieldset>
+
+      <label for="requestUrl">Path:</label>
+      <input type="text" id="requestUrl" value="/protected" />
+      <label for="requestBody">Body:</label>
+      <textarea id="requestBody" rows="4">{ "message": "hello" }</textarea>
+      <label for="request">Request:</label>
+      <fieldset id="request">
+        <button id="fetch-get">GET</button>
+        <button id="fetch-post">POST</button>
+      </fieldset>
+
+      <fieldset class="grid-row">
+        <button id="clear-log" class="warn">clear logs</button>
+      </fieldset>
+    </div>
+
+    <div>
+      <h3>Logs</h3>
+      <div id="logs"></div>
+    </div>
+
+    <script type="module">
+      import Keycloak from 'https://cdn.jsdelivr.net/npm/keycloak-js@26.0.7/+esm';
+      import { Logger } from './logger.js';
+
+      const log = new Logger(document.getElementById('logs'));
+
+      const keycloak = new Keycloak({
+        url: document.getElementById('keycloak-url').value,
+        realm: document.getElementById('realm').value,
+        clientId: document.getElementById('client-id').value,
+      });
+
+      // Keycloak callbacks.
+      keycloak.onReady = (authenticated) => {
+        log.info(`Keycloak is ${authenticated ? 'authenticated' : 'not authenticated'}`);
+        log.info('Access token', tokenStringify(keycloak.token));
+        log.info('Refresh token', tokenStringify(keycloak.refreshToken));
+      };
+      keycloak.onAuthSuccess = () => {
+        log.info('Authentication success');
+      };
+      keycloak.onAuthError = (error) => {
+        log.error('Authentication error', error);
+      };
+      keycloak.onAuthRefreshSuccess = () => {
+        log.info('Token refresh success');
+      };
+      keycloak.onAuthRefreshError = (error) => {
+        log.error('Token refresh error', error);
+      };
+      keycloak.onAuthLogout = () => {
+        log.info('Logged out');
+      };
+      keycloak.onTokenExpired = () => {
+        log.warn('Token expired');
+      };
+
+      document.getElementById('clear-log').addEventListener('click', () => log.clear());
+
+      async function fetchResource(method) {
+        const url = document.getElementById('requestUrl').value;
+        const body = method === 'GET' ? undefined : JSON.parse(document.getElementById('requestBody').value);
+        try {
+          await keycloak.updateToken(30);
+
+          const request = {
+            method: method,
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: keycloak.token ? `Bearer ${keycloak.token}` : '',
+            },
+            body: method === 'GET' ? undefined : JSON.stringify(body),
+          };
+          log.info(`Request ${method} to ${url}`, request.headers);
+
+          const response = await fetch(url, request);
+          log.info(`Response status: ${response.status}`, await response.text());
+        } catch (error) {
+          log.error(error);
+        }
+      }
+      document.getElementById('fetch-get').addEventListener('click', () => fetchResource('GET'));
+      document.getElementById('fetch-post').addEventListener('click', () => fetchResource('POST'));
+
+      // Load the login page when the login button is clicked.
+      document.getElementById('login').addEventListener('click', () => {
+        log.info('Loading login page');
+        try {
+          keycloak.login();
+        } catch (error) {
+          log.error(error);
+        }
+      });
+
+      // Refresh the token when the refresh button is clicked.
+      document.getElementById('update').addEventListener('click', async () => {
+        log.info('Update token');
+        try {
+          const refreshed = await keycloak.updateToken();
+        } catch (error) {
+          log.error(error);
+        }
+      });
+
+      // Log out when the logout button is clicked.
+      document.getElementById('logout').addEventListener('click', () => {
+        log.info('Logging out');
+        keycloak.logout();
+      });
+
+      // Initialize Keycloak at page load.
+      await keycloak.init({
+        onLoad: 'login-required',
+      });
+    </script>
+  </body>
+</html>
