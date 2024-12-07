@@ -9,14 +9,6 @@
   display: contents;
 }
 
-.logger .log-entry:hover * {
-  background-color: var(--logger-hover-color);
-}
-
-.logger .payload .line:hover {
-  background-color: #fff;
-}
-
 .logger .time {
   grid-column: time;
   padding: 0 0.5em;
@@ -37,16 +29,18 @@
 .logger .payload {
   padding: 0 0.5em;
   grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: [number] auto [data] 1fr;
 }
 
 .logger .payload .line-number {
+  grid-column: number;
   padding: 0 0.5em;
-  width: 2em;
   border-right: 1px solid var(--logger-border-color);
-  display: inline-block;
 }
 
-.logger .payload .line {
+.logger .payload .line-data {
+  grid-column: data;
   padding: 0 0.5em;
   white-space: pre-wrap;
   font-family: var(--logger-payload-font-family);

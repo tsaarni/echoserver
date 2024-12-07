@@ -62,16 +62,15 @@ function stringifyPayload(payload) {
   const formattedPayload = document.createElement('div');
   formattedPayload.className = 'payload';
 
-  lines.forEach((line, index) => {
-    const lineNumSpan = document.createElement('span');
-    lineNumSpan.className = 'line-number';
-    lineNumSpan.textContent = index + 1;
-    formattedPayload.appendChild(lineNumSpan);
-    const lineSpan = document.createElement('span');
-    lineSpan.className = 'line';
-    lineSpan.textContent = line;
-    formattedPayload.appendChild(lineSpan);
-    formattedPayload.appendChild(document.createElement('br'));
+  lines.forEach((data, index) => {
+    const n = document.createElement('span');
+    n.className = 'line-number';
+    n.textContent = index + 1;
+    formattedPayload.appendChild(n);
+    const d = document.createElement('span');
+    d.className = 'line-data';
+    d.textContent = data;
+    formattedPayload.appendChild(d);
   });
 
   return formattedPayload;

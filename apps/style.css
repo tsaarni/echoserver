@@ -12,7 +12,6 @@
   --logger-border-color: var(--border-color);
   --logger-payload-font-family: 'Courier New', monospace;
   --logger-error-color: var(--warn-color);
-  --logger-hover-color: #ddd;
 }
 
 * {
