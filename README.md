@@ -45,13 +45,13 @@ Following command line arguments can be given to the server:
 ### API
 
 <details>
-<summary><code>/*</code> Returns request details in JSON format, including headers and TLS information.</summary>
+<summary><code>/*</code> Returns request details in JSON format.</summary>
 
 #### Responses
 
 | Status | Description                     |
 | ------ | ------------------------------- |
-| 200 OK | Request details in JSON format. |
+| 200 OK | Request details in JSON format, including headers, method, URL, body, TLS information and decoded `Authorization` header (basic credentials and bearer token). |
 
 ##### Example
 
@@ -89,7 +89,7 @@ $ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://
 </details>
 
 <details>
-<summary><code>/apps/health</code> Returns a `200 OK` status, indicating the server is operational.</summary>
+<summary><code>/apps/status</code> Returns a `200 OK` status, indicating the server is operational.</summary>
 
 #### Responses
 
@@ -100,7 +100,7 @@ $ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://
 #### Example
 
 ```console
-$ http GET http://localhost:8080/apps/health
+$ http GET http://localhost:8080/apps/status
 ```
 
 ```http

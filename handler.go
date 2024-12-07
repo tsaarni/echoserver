@@ -2,8 +2,10 @@ package main
 
 import (
 	"crypto/tls"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -14,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"text/template"
+	"time"
 )
 
 type Handler struct {
@@ -23,18 +26,17 @@ type Handler struct {
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case r.URL.Path == "/apps/health":
-		h.HealthHandler(w, r)
-	case strings.HasPrefix(r.URL.Path, "/apps/status/"):
-		h.StatusHandler(w, r)
+	case strings.HasPrefix(r.URL.Path, "/apps/status"):
+		h.statusHandler(w, r)
 	case strings.HasPrefix(r.URL.Path, "/apps/"):
-		h.TemplateHandler(w, r)
+		h.templateHandler(w, r)
 	default:
-		h.EchoHandler(w, r)
+		h.echoHandler(w, r)
 	}
 }
 
-func (h *Handler) EchoHandler(w http.ResponseWriter, r *http.Request) {
+// echoHandler gathers information about the incoming request and returns it as a JSON response.
+func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
 	info := map[string]any{
 		"method":         r.Method,
@@ -61,7 +63,12 @@ func (h *Handler) EchoHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.TLS != nil {
-		h.handleTLS(r, info)
+		h.decodeTLSInfo(r, info)
+	}
+
+	authorization := r.Header.Get("Authorization")
+	if authorization != "" {
+		h.decodeAuthorizationInfo(authorization, info)
 	}
 
 	if h.envContext != nil {
@@ -78,7 +85,8 @@ func (h *Handler) EchoHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonData)
 }
 
-func (h *Handler) handleTLS(r *http.Request, info map[string]any) {
+// decodeTLSInfo extracts TLS information from the request.
+func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
 	slog.Info("TLS connection", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
 	var clientCerts string
 	for _, cert := range r.TLS.PeerCertificates {
@@ -93,18 +101,114 @@ func (h *Handler) handleTLS(r *http.Request, info map[string]any) {
 	}
 }
 
-func (h *Handler) HealthHandler(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
+// decodeAuthorizationInfo extracts information from the Authorization header.
+func (h *Handler) decodeAuthorizationInfo(authorization string, info map[string]any) {
+	val := strings.SplitN(authorization, " ", 2)
+	if len(val) != 2 {
+		slog.Warn("Invalid authorization header format")
+		return
+	}
+
+	authType := strings.ToLower(val[0])
+	credentials := strings.TrimSpace(val[1])
+
+	var err error
+	switch authType {
+	case "bearer":
+		err = parseBearerAuth(credentials, info)
+	case "basic":
+		err = parseBasicAuth(credentials, info)
+	default:
+		slog.Warn("Unsupported authorization type", "type", authType)
+		return
+	}
+
+	if err != nil {
+		slog.Warn("Error parsing authorization header", "error", err)
+		return
+	}
 }
 
-func (h *Handler) StatusHandler(w http.ResponseWriter, r *http.Request) {
+// parseBearerAuth decodes a JWT token.
+func parseBearerAuth(token string, info map[string]any) error {
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return fmt.Errorf("invalid JWT token format")
+	}
+
+	decodedHeader, err := base64.RawURLEncoding.DecodeString(parts[0])
+	if err != nil {
+		return err
+	}
+	header := map[string]any{}
+	if err = json.Unmarshal(decodedHeader, &header); err != nil {
+		return err
+	}
+
+	decodedPayload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return err
+	}
+
+	claims := map[string]any{}
+	if err := json.Unmarshal(decodedPayload, &claims); err != nil {
+		return err
+	}
+
+	jwt := map[string]any{
+		"header": header,
+		"claims": claims,
+	}
+
+	// Convert the `iat` and `exp` claims to ISO 8601 human readable format.
+	for _, claim := range []string{"iat", "exp"} {
+		if val, ok := claims[claim]; ok {
+			if valFloat, ok := val.(float64); ok {
+				jwt[claim+"_date"] = time.Unix(int64(valFloat), 0).Format(time.RFC3339)
+			}
+		}
+	}
+
+	info["jwt"] = jwt
+	return nil
+}
+
+// parseBasicAuth decodes a basic authentication credentials.
+func parseBasicAuth(encoded string, info map[string]any) error {
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
+	if err != nil {
+		return err
+	}
+
+	parts := strings.SplitN(string(decoded), ":", 2)
+	if len(parts) != 2 {
+		return fmt.Errorf("invalid basic auth format")
+	}
+
+	info["basic_auth"] = map[string]any{
+		"username": parts[0],
+		"password": parts[1],
+	}
+	return nil
+}
+
+// statusHandler returns a response with the provided status code.
+// The status code is extracted from the URL path.
+// If not provided, it returns 200 OK.
+func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling status request", "url", r.URL.String())
+
+	if r.RequestURI == "/apps/status" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 
 	re := regexp.MustCompile(`^/apps/status/(\d\d\d)$`)
 	match := re.FindStringSubmatch(r.RequestURI)
 	if match == nil {
 		slog.Warn("Error parsing status code /apps/status/{code}")
-		http.Error(w, "Invalid status code provided for /apps/status/{code}", http.StatusBadRequest)
+		http.Error(w, "Invalid status code provided for /apps/status/{code}. Code must be a 3-digit number.",
+			http.StatusBadRequest)
 		return
 	}
 	code, _ := strconv.Atoi(match[1])
@@ -125,7 +229,7 @@ func (h *Handler) StatusHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(code)
 }
 
-func (h *Handler) TemplateHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling template request", "url", r.URL.String())
 
 	relativePath := strings.TrimPrefix(r.URL.Path, "/apps/")

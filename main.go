@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"embed"
 	"flag"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -38,10 +39,21 @@ var (
 
 func newConfig() *Config {
 	flag.Bool("live", false, "Serve live static files")
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.PrintDefaults()
+		fmt.Fprintf(os.Stderr, "\nEnvironment variables:\n")
+		fmt.Fprintf(os.Stderr, "  HTTP_PORT\n\tPort for HTTP server\n")
+		fmt.Fprintf(os.Stderr, "  HTTPS_PORT\n\tPort for HTTPS server\n")
+		fmt.Fprintf(os.Stderr, "  TLS_CERT_FILE\n\tPath to TLS certificate file\n")
+		fmt.Fprintf(os.Stderr, "  TLS_KEY_FILE\n\tPath to TLS key file\n")
+		fmt.Fprintf(os.Stderr, "  ENV_*\n\tEnvironment variables to be used as context info in the echo response\n")
+	}
 	flag.Parse()
 
 	return &Config{
 		Live:      flag.Lookup("live").Value.String() == "true",
+		HTTPPort:  os.Getenv("HTTP_PORT"),
 		HTTPSPort: os.Getenv("HTTPS_PORT"),
 		CertFile:  os.Getenv("TLS_CERT_FILE"),
 		KeyFile:   os.Getenv("TLS_KEY_FILE"),
@@ -100,6 +112,8 @@ func startHTTPSServer(port string, certFile, keyFile string) {
 	}
 }
 
+// parseEnvContext reads environment variables that start with "ENV_" and stores them to be used
+// as context info in the echo response.
 func parseEnvContext() {
 	const prefix = "ENV_"
 	env := map[string]string{}
