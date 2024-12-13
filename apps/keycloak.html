@@ -13,7 +13,7 @@
 
     <div class="form-container">
       <label for="keycloak-url">Keycloak URL:</label>
-      <input type="text" id="keycloak-url" value="https://keycloak.127-0-0-15.nip.io" />
+      <input type="text" id="keycloak-url" value="http://localhost:8080" />
       <label for="realm">Realm:</label>
       <input type="text" id="realm" value="envoy" />
       <label for="client-id">Client ID:</label>
@@ -49,6 +49,7 @@
     <script type="module">
       import Keycloak from 'https://cdn.jsdelivr.net/npm/keycloak-js@26.0.7/+esm';
       import { Logger } from './logger.js';
+      import { tokenStringify } from './oauth.js';
 
       const log = new Logger(document.getElementById('logs'));
 
