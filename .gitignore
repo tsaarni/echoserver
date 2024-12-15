@@ -27,6 +27,6 @@ go.work.sum
 node_modules
 
 *.pem
-certs*
+certs/
 
 echoserver

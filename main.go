@@ -99,6 +99,12 @@ func startHTTPSServer(port string, certFile, keyFile string) {
 		return &cert, nil
 	}
 
+	// Call lookupCert to check if the certificate and key files are valid.
+	_, err := lookupCert(nil)
+	if err != nil {
+		os.Exit(1)
+	}
+
 	server := newHTTPServer(port, defaultHTTPSPort)
 	server.TLSConfig = &tls.Config{ // #nosec // G402: TLS MinVersion too low.
 		ClientAuth:     tls.RequestClientCert,
@@ -106,7 +112,7 @@ func startHTTPSServer(port string, certFile, keyFile string) {
 	}
 	slog.Info("Server is running in HTTPS mode", "address", server.Addr,
 		"tls_cert_file", certFile, "tls_key_file", keyFile)
-	err := server.ListenAndServeTLS("", "")
+	err = server.ListenAndServeTLS("", "")
 	if err != nil {
 		slog.Error("Error starting HTTPS server", "error", err)
 	}

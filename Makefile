@@ -1,4 +1,4 @@
-.PHONY: all lint lint-go lint-js lint-html clean
+.PHONY: all lint lint-go lint-js lint-html clean container generate-test-certs run
 
 all:
 	CGO_ENABLED=0 go build
@@ -19,3 +19,10 @@ lint-js:
 
 lint-html:
 	npx htmlhint "**/*.html"
+
+generate-test-certs:
+	@mkdir -p testdata/certs
+	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.10.0 -d testdata/certs testdata/certs.yaml
+
+run: generate-test-certs
+	go run . -live

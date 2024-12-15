@@ -1,0 +1,12 @@
+subject: cn=ca
+---
+subject: cn=envoy
+issuer: cn=ca
+sans:
+  - DNS:envoy.127.0.0.1.nip.io
+---
+subject: cn=echoserver
+issuer: cn=ca
+sans:
+  - DNS:echoserver.127.0.0.1.nip.io
+  - DNS:localhost

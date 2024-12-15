@@ -203,3 +203,12 @@ To lint the code, use the following command:
 ```sh
 make lint
 ```
+
+To run with Keyclaok as an OIDC provider, use the following command:
+
+```sh
+make run           # Run in one terminal
+docker compose up  # Run in another terminal
+```
+
+Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/keycloak.html and Keycloak at https://keycloak.127.0.0.1.nip.io/.

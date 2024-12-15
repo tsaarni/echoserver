@@ -13,11 +13,11 @@
 
     <div class="form-container">
       <label for="keycloak-url">Keycloak URL:</label>
-      <input type="text" id="keycloak-url" value="http://localhost:8080" />
+      <input type="text" id="keycloak-url" />
       <label for="realm">Realm:</label>
-      <input type="text" id="realm" value="envoy" />
+      <input type="text" id="realm" />
       <label for="client-id">Client ID:</label>
-      <input type="text" id="client-id" value="envoy-public" />
+      <input type="text" id="client-id" />
 
       <label for="oauth-operation">OAuth operations:</label>
       <fieldset id="oauth-operation">
@@ -50,9 +50,18 @@
       import Keycloak from 'https://cdn.jsdelivr.net/npm/keycloak-js@26.0.7/+esm';
       import { Logger } from './logger.js';
       import { tokenStringify } from './oauth.js';
+      import { PersistentValues } from './utils.js';
 
       const log = new Logger(document.getElementById('logs'));
 
+      // Get the client configuration from the local storage or use the default values.
+      const clientValues = new PersistentValues('client-params')
+        .addElement(document.getElementById('keycloak-url'), 'https://keycloak.127.0.0.1.nip.io')
+        .addElement(document.getElementById('realm'), 'echoserver')
+        .addElement(document.getElementById('client-id'), 'echoserver-public')
+        .bind();
+
+      // Initialize Keycloak adapter.
       const keycloak = new Keycloak({
         url: document.getElementById('keycloak-url').value,
         realm: document.getElementById('realm').value,
@@ -61,7 +70,7 @@
 
       // Keycloak callbacks.
       keycloak.onReady = (authenticated) => {
-        log.info(`Keycloak is ${authenticated ? 'authenticated' : 'not authenticated'}`);
+        log.info(`Keycloak adapter status is: ${authenticated ? 'authenticated' : 'not authenticated'}`);
         log.info('Access token', tokenStringify(keycloak.token));
         log.info('Refresh token', tokenStringify(keycloak.refreshToken));
       };
@@ -126,6 +135,11 @@
         log.info('Update token');
         try {
           const refreshed = await keycloak.updateToken();
+          if (refreshed) {
+            log.info('Token refreshed');
+          } else {
+            log.info('Token not refreshed');
+          }
         } catch (error) {
           log.error(error);
         }
