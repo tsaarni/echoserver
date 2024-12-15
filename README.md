@@ -1,12 +1,18 @@
 # Echoserver
 
-This is a simple HTTP server that listens on incoming requests and echoes back information about the request.
-It is inspired by the [echoserver](https://github.com/kubernetes-sigs/ingress-controller-conformance/tree/master/images/echoserver) from the [ingress-controller-conformance](https://github.com/kubernetes-sigs/ingress-controller-conformance) project.
-Additionally, the server can be used to test authentication and authorization features in ingress controllers by providing clients that make requests to the echoserver.
+This is a simple HTTP server that listens on incoming requests and echoes back
+information about the request. It is inspired by the
+[echoserver](https://github.com/kubernetes-sigs/ingress-controller-conformance/tree/master/images/echoserver)
+from the
+[ingress-controller-conformance](https://github.com/kubernetes-sigs/ingress-controller-conformance)
+project. Additionally, the server can be used to test authentication and
+authorization features in ingress controllers by providing clients that make
+requests to the echoserver.
 
 ## Usage
 
-If you want to run the server locally and you have `go`, you can use the following command:
+If you want to run the server locally and you have `go`, you can use the
+following command:
 
 ```sh
 go run github.com/tsaarni/echoserver@latest
@@ -20,20 +26,22 @@ Echoserver is available as a container image:
 ghcr.io/tsaarni/tsaarni/echoserver:latest
 ```
 
-Echoserver can be configured either using command line arguments or environment variables.
-Command line arguments take precedence over environment variables.
+Echoserver can be configured either using command line arguments or environment
+variables. Command line arguments take precedence over environment variables.
 Following table
 
-| Argument       | Variable        | Description                                                                                                           | Default |
-| -------------- | --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| -http-port     | `HTTP_PORT`     | Address to bind the HTTP server socket                                                                                | `8080`  |
-| -https-port    | `HTTPS_PORT`    | Address to bind the HTTPS server socket                                                                               | `8443`  |
-| -tls-cert-file | `TLS_CERT_FILE` | Path to TLS certificate file                                                                                          |         |
-| -tls-key-file  | `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
-|                | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
-| -live          |                 | Serve static files directly from the filesystem instead of using bundled files                                        | `false` |
+| Command line         | Variable        | Description                                                                                                           | Default |
+| ---------------- | --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
+| `-http-port`     | `HTTP_PORT`     | Address to bind the HTTP server socket                                                                                | `8080`  |
+| `-https-port`    | `HTTPS_PORT`    | Address to bind the HTTPS server socket                                                                               | `8443`  |
+| `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file                                                                                          |         |
+| `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
+|                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
+| `-live`          |                 | Serve static files directly from the filesystem instead of using bundled files                                        | `false` |
 
-The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and key files without restarting the server.
+The certificate and key files will be loaded from the filesystem every time a
+request is made to the server, so it is possible to update the certificate and
+key files without restarting the server.
 
 The following environment variables are used when rendering the HTML pages:
 
@@ -119,8 +127,8 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 | ---- | --------------------------- |
 | code | HTTP status code to return. |
 
-Optionally, a JSON object can be provided in the body to include additional HTTP headers in the response,
-or the headers can be provided as query parameters.
+Optionally, a JSON object can be provided in the body to include additional HTTP
+headers in the response, or the headers can be provided as query parameters.
 
 #### Example
 
@@ -168,7 +176,8 @@ Set-Cookie: hello=world
 <details>
 <summary><code>/apps/fetch.html</code> Interactive HTTP request tool.</summary>
 
-A JavaScript application that enables users to make HTTP requests towards the echoserver using different methods and view the responses.
+A JavaScript application that enables users to make HTTP requests towards the
+echoserver using different methods and view the responses.
 
 ![image](https://github.com/user-attachments/assets/1c325a58-2829-4549-8f70-d411b562190c)
 
@@ -177,7 +186,8 @@ A JavaScript application that enables users to make HTTP requests towards the ec
 <details>
 <summary><code>/apps/form.html</code> HTML form submission.</summary>
 
-An HTML form that enables data submission using both `POST` and `GET` methods towards the echoserver.
+An HTML form that enables data submission using both `POST` and `GET` methods
+towards the echoserver.
 
 ![image](https://github.com/user-attachments/assets/46d5deb3-e9f5-4f34-a114-3d9ab0219e0b)
 
@@ -187,21 +197,26 @@ An HTML form that enables data submission using both `POST` and `GET` methods to
 <summary><code>/apps/oauth.html</code> Interactive OAuth2 client.</summary>
 
 OAuth2-aware JavaScript application that implements the Authorization Code flow.
-It allows users to interactively trigger login/refresh/logout and to make authenticated requests towards the echoserver and view the responses.
+It allows users to interactively trigger login/refresh/logout and to make
+authenticated requests towards the echoserver and view the responses.
 
 ![image](https://github.com/user-attachments/assets/31f5da4b-e064-4ce4-89e8-9d28a7230716)
 
 </details>
 
-Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
-
 <details>
 <summary><code>/apps/keycloak.html</code> Interactive client using keycloak-js adapter.</summary>
 
-OAuth2-aware JavaScript application that uses the [Keycloak-js](https://www.keycloak.org/securing-apps/javascript-adapter) JavaScript adapter to authenticate users.
-It allows users to interactively trigger login/refresh/logout and to make authenticated requests towards the echoserver and view the responses.
+OAuth2-aware JavaScript application that uses the
+[Keycloak-js](https://www.keycloak.org/securing-apps/javascript-adapter)
+JavaScript adapter to authenticate users. It allows users to interactively
+trigger login/refresh/logout and to make authenticated requests towards the
+echoserver and view the responses.
 
 </details>
+
+Example commands in the descriptions are given using the
+[HTTPie](https://httpie.io/) tool.
 
 ## Development
 
@@ -212,7 +227,8 @@ make build
 ./echoserver
 ```
 
-To serve HTML files from the filesystem instead of using bundled files, use the following command:
+To serve HTML files from the filesystem instead of using bundled files, use the
+following command:
 
 ```sh
 ./echoserver -live
@@ -230,13 +246,16 @@ To lint the code, use the following command:
 make lint
 ```
 
-To test the OIDC applications, you need to have an OIDC provider.
-To run Keyclaok as an OIDC provider, use the following command:
+To test the OIDC applications, you need to have an OIDC provider. To run
+Keyclaok as an OIDC provider, use the following command:
 
 ```sh
 make run           # Generate test certificates and run echoserver in one terminal.
 docker compose up  # Run Envoy and Keycloak in another terminal.
 ```
 
-Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/ and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/.
-Envoy will validate JWT for endpoints matching with https://echoserver.127.0.0.1.nip.io/protected.
+Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/
+and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/. Envoy will
+validate JWT for endpoints matching with
+https://echoserver.127.0.0.1.nip.io/protected.
+The admin console credentials are `admin:admin`, and the user credentials in `echoserver` realm are `joe:joe` and `jane:jane`.
