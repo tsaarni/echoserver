@@ -1,7 +1,7 @@
 .PHONY: all lint lint-go lint-js lint-html clean container generate-test-certs run
 
 all:
-	CGO_ENABLED=0 go build
+	CGO_ENABLED=0 go build .
 
 container:
 	docker build -t ghcr.io/tsaarni/tsaarni/echoserver:latest .

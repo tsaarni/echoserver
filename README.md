@@ -10,6 +10,8 @@ If you want to run the server locally and you have `go`, you can use the followi
 
 ```sh
 go run github.com/tsaarni/echoserver@latest
+# or
+go install github.com/tsaarni/echoserver@latest
 ```
 
 Echoserver is available as a container image:
@@ -18,15 +20,18 @@ Echoserver is available as a container image:
 ghcr.io/tsaarni/tsaarni/echoserver:latest
 ```
 
-The following environment variables can be used to configure the server:
+Echoserver can be configured either using command line arguments or environment variables.
+Command line arguments take precedence over environment variables.
+Following table
 
-| Variable        | Description                                                                                                           | Default |
-| --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| `HTTP_PORT`     | Port for HTTP server                                                                                                  | `8080`  |
-| `HTTPS_PORT`    | Port for HTTPS server                                                                                                 | `8443`  |
-| `TLS_CERT_FILE` | Path to TLS certificate file                                                                                          |         |
-| `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
-| `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
+| Argument       | Variable        | Description                                                                                                           | Default |
+| -------------- | --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
+| -http-port     | `HTTP_PORT`     | Address to bind the HTTP server socket                                                                                | `8080`  |
+| -https-port    | `HTTPS_PORT`    | Address to bind the HTTPS server socket                                                                               | `8443`  |
+| -tls-cert-file | `TLS_CERT_FILE` | Path to TLS certificate file                                                                                          |         |
+| -tls-key-file  | `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
+|                | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
+| -live          |                 | Serve static files directly from the filesystem instead of using bundled files                                        | `false` |
 
 The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and key files without restarting the server.
 
@@ -36,12 +41,6 @@ The following environment variables are used when rendering the HTML pages:
 | -------------- | ---------------------- | --------- |
 | `ENV_HOSTNAME` | Hostname of the server | localhost |
 
-Following command line arguments can be given to the server:
-
-| Argument | Description                                                                     | Default |
-| -------- | ------------------------------------------------------------------------------- | ------- |
-| `-live`  | Serve static files directly from the filesystem instead of using bundled files. | `false` |
-
 ### API
 
 <details>
@@ -49,9 +48,9 @@ Following command line arguments can be given to the server:
 
 #### Responses
 
-| Status | Description                     |
-| ------ | ------------------------------- |
-| 200 OK | Request details in JSON format, including headers, method, URL, body, TLS information and decoded `Authorization` header (basic credentials and bearer token). |
+| Status | Description                                                                                                                                                        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 200 OK | Request details in JSON format, including headers, method, URL, body, TLS information and decoded `Authorization` header (basic credentials and JWT bearer token). |
 
 ##### Example
 
@@ -89,7 +88,7 @@ $ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://
 </details>
 
 <details>
-<summary><code>/apps/status</code> Returns a `200 OK` status, indicating the server is operational.</summary>
+<summary><code>/status</code> Returns a `200 OK` status, indicating the server is operational.</summary>
 
 #### Responses
 
@@ -100,7 +99,7 @@ $ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://
 #### Example
 
 ```console
-$ http GET http://localhost:8080/apps/status
+$ http GET http://localhost:8080/status
 ```
 
 ```http
@@ -112,7 +111,7 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 </details>
 
 <details>
-<summary><code>/apps/status/{code}</code> Returns the specified HTTP status code.</summary>
+<summary><code>/status/{code}</code> Returns the specified HTTP status code.</summary>
 
 #### Parameters
 
@@ -120,12 +119,13 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 | ---- | --------------------------- |
 | code | HTTP status code to return. |
 
-Optionally, a JSON object can be provided in the body to include additional HTTP headers in the response.
+Optionally, a JSON object can be provided in the body to include additional HTTP headers in the response,
+or the headers can be provided as query parameters.
 
 #### Example
 
 ```sh
-$ http POST http://localhost:8080/apps/status/301 Location=http://localhost/bar
+$ http POST http://localhost:8080/status/301 Location=http://localhost/bar
 ```
 
 Body of the request
@@ -145,6 +145,24 @@ Date: Fri, 29 Nov 2024 06:10:25 GMT
 Location: http://localhost/bar
 ```
 
+```sh
+$ http "http://localhost:8080/status/200?Set-Cookie=foo%3Dbar&Set-Cookie=hello%3Dworld"
+```
+
+Response:
+
+```http
+HTTP/1.1 200 OK
+Content-Length: 0
+Date: Sun, 15 Dec 2024 12:00:06 GMT
+Set-Cookie: foo=bar
+Set-Cookie: hello=world
+```
+
+</details>
+
+<details>
+<summary><code>/apps/</code> Returns a list of available applications.</summary>
 </details>
 
 <details>
@@ -166,7 +184,7 @@ An HTML form that enables data submission using both `POST` and `GET` methods to
 </details>
 
 <details>
-<summary><code>/apps/oauth.html</code> Interactive Oauth2 client.</summary>
+<summary><code>/apps/oauth.html</code> Interactive OAuth2 client.</summary>
 
 OAuth2-aware JavaScript application that implements the Authorization Code flow.
 It allows users to interactively trigger login/refresh/logout and to make authenticated requests towards the echoserver and view the responses.
@@ -176,6 +194,14 @@ It allows users to interactively trigger login/refresh/logout and to make authen
 </details>
 
 Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
+
+<details>
+<summary><code>/apps/keycloak.html</code> Interactive client using keycloak-js adapter.</summary>
+
+OAuth2-aware JavaScript application that uses the [Keycloak-js](https://www.keycloak.org/securing-apps/javascript-adapter) JavaScript adapter to authenticate users.
+It allows users to interactively trigger login/refresh/logout and to make authenticated requests towards the echoserver and view the responses.
+
+</details>
 
 ## Development
 
@@ -204,11 +230,13 @@ To lint the code, use the following command:
 make lint
 ```
 
-To run with Keyclaok as an OIDC provider, use the following command:
+To test the OIDC applications, you need to have an OIDC provider.
+To run Keyclaok as an OIDC provider, use the following command:
 
 ```sh
-make run           # Run in one terminal
-docker compose up  # Run in another terminal
+make run           # Generate test certificates and run echoserver in one terminal.
+docker compose up  # Run Envoy and Keycloak in another terminal.
 ```
 
-Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/keycloak.html and Keycloak at https://keycloak.127.0.0.1.nip.io/.
+Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/ and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/.
+Envoy will validate JWT for endpoints matching with https://echoserver.127.0.0.1.nip.io/protected.

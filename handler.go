@@ -26,7 +26,7 @@ type Handler struct {
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
-	case strings.HasPrefix(r.URL.Path, "/apps/status"):
+	case strings.HasPrefix(r.URL.Path, "/status"):
 		h.statusHandler(w, r)
 	case strings.HasPrefix(r.URL.Path, "/apps/"):
 		h.templateHandler(w, r)
@@ -198,32 +198,41 @@ func parseBasicAuth(encoded string, info map[string]any) error {
 func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling status request", "url", r.URL.String())
 
-	if r.RequestURI == "/apps/status" {
+	if r.URL.Path == "/status" {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	re := regexp.MustCompile(`^/apps/status/(\d\d\d)$`)
-	match := re.FindStringSubmatch(r.RequestURI)
+	re := regexp.MustCompile(`^/status/(\d\d\d)$`)
+	match := re.FindStringSubmatch(r.URL.Path)
 	if match == nil {
-		slog.Warn("Error parsing status code /apps/status/{code}")
-		http.Error(w, "Invalid status code provided for /apps/status/{code}. Code must be a 3-digit number.",
+		slog.Warn("Error parsing status code /status/{code}")
+		http.Error(w, "Invalid status code provided for /status/{code}. Code must be a 3-digit number.",
 			http.StatusBadRequest)
 		return
 	}
 	code, _ := strconv.Atoi(match[1])
 
-	var headers map[string]string
 	if r.Body != nil {
+		var headers map[string]string
 		if err := json.NewDecoder(r.Body).Decode(&headers); err != nil && err != io.EOF {
 			slog.Warn("Error decoding JSON body", "error", err)
 			http.Error(w, "Error decoding JSON body", http.StatusBadRequest)
 			return
 		}
+
+		for key, value := range headers {
+			w.Header().Set(key, value)
+		}
 	}
 
-	for key, value := range headers {
-		w.Header().Set(key, value)
+	// Parse query string and add them as headers.
+	query := r.URL.Query()
+	for key, values := range query {
+		for _, value := range values {
+			slog.Info("Setting header", "key", key, "value", value)
+			w.Header().Add(key, value)
+		}
 	}
 
 	w.WriteHeader(code)

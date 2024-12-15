@@ -55,7 +55,7 @@
       const log = new Logger(document.getElementById('logs'));
 
       // Get the client configuration from the local storage or use the default values.
-      const clientValues = new PersistentValues('client-params')
+      const clientValues = new PersistentValues('keycloak-client-params')
         .addElement(document.getElementById('keycloak-url'), 'https://keycloak.127.0.0.1.nip.io')
         .addElement(document.getElementById('realm'), 'echoserver')
         .addElement(document.getElementById('client-id'), 'echoserver-public')

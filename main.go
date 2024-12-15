@@ -14,14 +14,14 @@ import (
 )
 
 const (
-	defaultHTTPPort  = "8080"
-	defaultHTTPSPort = "8443"
+	defaultHTTPAddr  = ":8080"
+	defaultHTTPSAddr = ":8443"
 )
 
 type Config struct {
 	Live      bool
-	HTTPPort  string
-	HTTPSPort string
+	HTTPAddr  string
+	HTTPSAddr string
 	CertFile  string
 	KeyFile   string
 }
@@ -38,25 +38,41 @@ var (
 )
 
 func newConfig() *Config {
-	flag.Bool("live", false, "Serve live static files")
+	live := flag.Bool("live", false, "Serve live static files")
+	httpAddr := flag.String("http-addr", "", "Address to bind the HTTP server socket")
+	httpsAddr := flag.String("https-addr", "", "Address to bind the HTTPS server socket")
+	certFile := flag.String("tls-cert-file", "", "Path to TLS certificate file")
+	keyFile := flag.String("tls-key-file", "", "Path to TLS key file")
+
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nEnvironment variables:\n")
-		fmt.Fprintf(os.Stderr, "  HTTP_PORT\n\tPort for HTTP server\n")
-		fmt.Fprintf(os.Stderr, "  HTTPS_PORT\n\tPort for HTTPS server\n")
+		fmt.Fprintf(os.Stderr, "  HTTP_ADDR\n\tAddress to bind the HTTP server socket\n")
+		fmt.Fprintf(os.Stderr, "  HTTPS_ADDR\n\tAddress to bind the HTTPS server socket\n")
 		fmt.Fprintf(os.Stderr, "  TLS_CERT_FILE\n\tPath to TLS certificate file\n")
 		fmt.Fprintf(os.Stderr, "  TLS_KEY_FILE\n\tPath to TLS key file\n")
 		fmt.Fprintf(os.Stderr, "  ENV_*\n\tEnvironment variables to be used as context info in the echo response\n")
 	}
+
 	flag.Parse()
 
+	getEnv := func(key, flagValue, defaultValue string) string {
+		if flagValue != "" {
+			return flagValue
+		}
+		if value, exists := os.LookupEnv(key); exists {
+			return value
+		}
+		return defaultValue
+	}
+
 	return &Config{
-		Live:      flag.Lookup("live").Value.String() == "true",
-		HTTPPort:  os.Getenv("HTTP_PORT"),
-		HTTPSPort: os.Getenv("HTTPS_PORT"),
-		CertFile:  os.Getenv("TLS_CERT_FILE"),
-		KeyFile:   os.Getenv("TLS_KEY_FILE"),
+		Live:      *live,
+		HTTPAddr:  getEnv("HTTP_ADDR", *httpAddr, defaultHTTPAddr),
+		HTTPSAddr: getEnv("HTTPS_ADDR", *httpsAddr, defaultHTTPSAddr),
+		CertFile:  getEnv("TLS_CERT_FILE", *certFile, ""),
+		KeyFile:   getEnv("TLS_KEY_FILE", *keyFile, ""),
 	}
 }
 
@@ -70,18 +86,11 @@ func setupFilesystem(live bool) {
 	}
 }
 
-func newHTTPServer(port, defaultPort string) *http.Server {
-	if port == "" {
-		port = defaultPort
-	}
-	return &http.Server{
-		Addr:              ":" + port,
+func startHTTPServer(addr string) {
+	server := &http.Server{
+		Addr:              addr,
 		ReadHeaderTimeout: time.Duration(5) * time.Second,
 	}
-}
-
-func startHTTPServer(port string) {
-	server := newHTTPServer(port, defaultHTTPPort)
 	slog.Info("Server is running in HTTP mode", "address", server.Addr)
 	err := server.ListenAndServe()
 	if err != nil {
@@ -89,7 +98,7 @@ func startHTTPServer(port string) {
 	}
 }
 
-func startHTTPSServer(port string, certFile, keyFile string) {
+func startHTTPSServer(addr string, certFile, keyFile string) {
 	lookupCert := func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
@@ -105,7 +114,10 @@ func startHTTPSServer(port string, certFile, keyFile string) {
 		os.Exit(1)
 	}
 
-	server := newHTTPServer(port, defaultHTTPSPort)
+	server := &http.Server{
+		Addr:              addr,
+		ReadHeaderTimeout: time.Duration(5) * time.Second,
+	}
 	server.TLSConfig = &tls.Config{ // #nosec // G402: TLS MinVersion too low.
 		ClientAuth:     tls.RequestClientCert,
 		GetCertificate: lookupCert,
@@ -151,10 +163,10 @@ func main() {
 	http.Handle("/", handler)
 
 	if config.CertFile != "" && config.KeyFile != "" {
-		go startHTTPSServer(config.HTTPSPort, config.CertFile, config.KeyFile)
+		go startHTTPSServer(config.HTTPSAddr, config.CertFile, config.KeyFile)
 	}
 
-	go startHTTPServer(config.HTTPPort)
+	go startHTTPServer(config.HTTPAddr)
 
 	select {}
 }

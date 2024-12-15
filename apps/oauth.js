@@ -1,3 +1,6 @@
+/**
+ * OAuth implements authorization code.
+ */
 class OAuth {
   // Private fields
 
@@ -23,10 +26,19 @@ class OAuth {
     this.#log = logger;
   }
 
+  /**
+   * Getter for access token.
+   * @returns {string} The access token.
+   */
   get accessToken() {
     return this.#accessToken;
   }
 
+  /**
+   * Refresh the access token using the refresh token.
+   * @returns {Promise} A promise that resolves with the token response.
+   * @throws {Error} If the refresh token is not known or the token cannot be fetched.
+   */
   async refresh() {
     if (!this.#refreshToken) {
       throw new Error('Refresh token not known');
@@ -38,7 +50,9 @@ class OAuth {
     return response;
   }
 
-  // Redirect the browser to the login page.
+  /**
+   * loadLoginPage redirects the browser to the login page.
+   */
   loadLoginPage() {
     const authUrl = `${this.#authEndpoint}?response_type=code&client_id=${
       this.#clientId
@@ -46,6 +60,10 @@ class OAuth {
     window.location.href = authUrl;
   }
 
+  /**
+   * logout logs out the user by revoking the refresh token.
+   * @throws {Error} If the logout fails.
+   */
   async logout() {
     try {
       this.#log.info(`POST ${this.#endSessionEndpoint}`);
@@ -71,10 +89,11 @@ class OAuth {
     }
   }
 
-  // Handle the redirect from the login page.
-  //
-  // @returns {Promise} A promise that resolves with the token response.
-  // @throws {Error} If the token cannot be fetched.
+  /**
+   * handleRedirect handles the redirect from the login page.
+   * @returns {Promise} A promise that resolves with the token response.
+   * @throws {Error} If the token cannot be fetched.
+   */
   async handleRedirect() {
     // Fetch the well-known endpoints.
     const config = await this.#fetchWellKnownEndpoint(this.#wellKnownEndpoint);

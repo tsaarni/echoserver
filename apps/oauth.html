@@ -13,13 +13,9 @@
 
     <div class="form-container">
       <label for="client-id">Client ID:</label>
-      <input type="text" id="client-id" value="envoy-public" />
+      <input type="text" id="client-id" />
       <label for="openid-well-known-url">Well-known URL:</label>
-      <input
-        type="text"
-        id="openid-well-known-url"
-        value="https://keycloak.127-0-0-15.nip.io/realms/envoy/.well-known/openid-configuration"
-      />
+      <input type="text" id="openid-well-known-url" />
       <label for="oauth-operation">OAuth operations:</label>
       <fieldset id="oauth-operation">
         <button id="login">Login</button>
@@ -51,8 +47,18 @@
     <script type="module">
       import { OAuth, tokenStringify } from './oauth.js';
       import { Logger } from './logger.js';
+      import { PersistentValues } from './utils.js';
 
       const log = new Logger(document.getElementById('logs'));
+
+      // Get the client configuration from the local storage or use the default values.
+      const clientValues = new PersistentValues('oauth-client-params')
+        .addElement(document.getElementById('client-id'), 'echoserver-public')
+        .addElement(
+          document.getElementById('openid-well-known-url'),
+          'https://keycloak.127.0.0.1.nip.io/realms/echoserver/.well-known/openid-configuration'
+        )
+        .bind();
 
       const oauthClient = new OAuth(
         document.getElementById('client-id').value,

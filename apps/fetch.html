@@ -45,6 +45,9 @@
         const body = method === 'GET' ? undefined : document.getElementById('body').value;
 
         log.info(`Request ${method} to ${url}`, body);
+        if (body === undefined) {
+          log.info('No body content for GET request');
+        }
 
         try {
           const response = await fetch(url, {
