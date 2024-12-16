@@ -1,5 +1,5 @@
 /**
- * OAuth implements authorization code.
+ * OAuth implements authorization code flow and refresh token flow.
  */
 class OAuth {
   // Private fields
@@ -44,7 +44,7 @@ class OAuth {
       throw new Error('Refresh token not known');
     }
     const response = await this.#fetchTokenWithRefreshToken();
-    this.#log.info(`Refreshed token successfully`);
+    this.#log.info('Refreshed token successfully');
     this.#accessToken = response.access_token;
     this.#refreshToken = response.refresh_token;
     return response;

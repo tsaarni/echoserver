@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -57,8 +58,8 @@
         .addElement(
           document.getElementById('openid-well-known-url'),
           'https://keycloak.127.0.0.1.nip.io/realms/echoserver/.well-known/openid-configuration'
-        )
-        .bind();
+        );
+      clientValues.bind();
 
       const oauthClient = new OAuth(
         document.getElementById('client-id').value,
@@ -131,4 +132,5 @@
       }
     </script>
   </body>
+
 </html>

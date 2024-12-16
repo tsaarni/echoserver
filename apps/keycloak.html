@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -58,8 +59,8 @@
       const clientValues = new PersistentValues('keycloak-client-params')
         .addElement(document.getElementById('keycloak-url'), 'https://keycloak.127.0.0.1.nip.io')
         .addElement(document.getElementById('realm'), 'echoserver')
-        .addElement(document.getElementById('client-id'), 'echoserver-public')
-        .bind();
+        .addElement(document.getElementById('client-id'), 'echoserver-public');
+      clientValues.bind();
 
       // Initialize Keycloak adapter.
       const keycloak = new Keycloak({
@@ -157,4 +158,5 @@
       });
     </script>
   </body>
+
 </html>

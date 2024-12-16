@@ -1,5 +1,6 @@
 import globals from 'globals';
 import pluginJs from '@eslint/js';
+import pluginHtml from 'eslint-plugin-html';
 
 /** @type {import('eslint').Linter.Config[]} */
 export default [
@@ -13,7 +14,13 @@ export default [
       'no-unused-vars': 'error',
       'no-console': 'warn',
       strict: ['error', 'global'],
+      quotes: ['error', 'single'],
+      semi: ['error', 'always'],
     },
   },
   pluginJs.configs.recommended,
+  {
+    files: ['**/*.html'],
+    plugins: { pluginHtml }
+  },
 ];

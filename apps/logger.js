@@ -1,3 +1,9 @@
+/**
+ * Logger implements a simple logging utility.
+ * It logs into a given div element using style defined in "logger.css".
+ * It supports logging of INFO and ERROR messages and optional "payloads"
+ * which can be JSON objects (REST responses) or strings.
+ */
 class Logger {
   constructor(div) {
     this.container = div;
@@ -21,7 +27,7 @@ class Logger {
     timestampSpan.textContent = timestamp;
 
     const levelSpan = document.createElement('span');
-    levelSpan.className = `level`;
+    levelSpan.className = 'level';
     levelSpan.textContent = `[${level}]`;
 
     const messageSpan = document.createElement('span');
