@@ -32,8 +32,8 @@ Following table
 
 | Command line         | Variable        | Description                                                                                                           | Default |
 | ---------------- | --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| `-http-port`     | `HTTP_PORT`     | Address to bind the HTTP server socket                                                                                | `8080`  |
-| `-https-port`    | `HTTPS_PORT`    | Address to bind the HTTPS server socket                                                                               | `8443`  |
+| `-http-addr`     | `HTTP_ADDR`     | Address to bind the HTTP server socket                                                                                | `:8080` |
+| `-https-addr`    | `HTTPS_ADDR`    | Address to bind the HTTPS server socket                                                                               | `:8443` |
 | `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file                                                                                          |         |
 | `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
 |                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
