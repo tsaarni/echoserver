@@ -25,4 +25,4 @@ generate-test-certs:
 	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.10.0 -d testdata/certs testdata/certs.yaml
 
 run: generate-test-certs
-	go run . -live
+	go run . -live -tls-cert-file testdata/certs/echoserver.pem -tls-key-file testdata/certs/echoserver-key.pem
