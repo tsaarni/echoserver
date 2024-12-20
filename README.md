@@ -1,6 +1,6 @@
 # Echoserver
 
-This is a simple HTTP server that listens on incoming requests and echoes back
+Echoserver is a simple HTTP server that listens on incoming requests and echoes back
 information about the request. It is inspired by the
 [echoserver](https://github.com/kubernetes-sigs/ingress-controller-conformance/tree/master/images/echoserver)
 from the
@@ -11,43 +11,34 @@ requests to the echoserver.
 
 ## Usage
 
-If you want to run the server locally and you have `go`, you can use the
-following command:
+To run the server locally it can be installed or run directly using following commands:
 
 ```sh
-go run github.com/tsaarni/echoserver@latest
-# or
-go install github.com/tsaarni/echoserver@latest
+go install github.com/tsaarni/echoserver@latest # Install the binary.
+go run github.com/tsaarni/echoserver@latest     # Run the server without installing.
 ```
 
-Echoserver is available as a container image:
+Echoserver is also available as a container image:
 
 ```
 ghcr.io/tsaarni/tsaarni/echoserver:latest
 ```
 
-Echoserver can be configured either using command line arguments or environment
-variables. Command line arguments take precedence over environment variables.
-Following table
+Echoserver can be configured either using command line arguments or environment variables.
+Command line arguments take precedence over environment variables.
+Following table lists the available configuration options:
 
-| Command line         | Variable        | Description                                                                                                           | Default |
-| ---------------- | --------------- | --------------------------------------------------------------------------------------------------------------------- | ------- |
-| `-http-addr`     | `HTTP_ADDR`     | Address to bind the HTTP server socket                                                                                | `:8080` |
-| `-https-addr`    | `HTTPS_ADDR`    | Address to bind the HTTPS server socket                                                                               | `:8443` |
-| `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file                                                                                          |         |
-| `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file                                                                                                  |         |
-|                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates |         |
-| `-live`          |                 | Serve static files directly from the filesystem instead of using bundled files                                        | `false` |
+| Command line     | Variable        | Description                                                                                                            | Default |
+| ---------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------- |
+| `-http-addr`     | `HTTP_ADDR`     | Address to bind the HTTP server socket.                                                                                | `:8080` |
+| `-https-addr`    | `HTTPS_ADDR`    | Address to bind the HTTPS server socket.                                                                               | `:8443` |
+| `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file.                                                                                          |         |
+| `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file.                                                                                                  |         |
+|                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates. |         |
+| `-live`          |                 | Serve static files directly from the `./apps` dorectory instead of using bundled files in the binary.                  | `false` |
 
-The certificate and key files will be loaded from the filesystem every time a
-request is made to the server, so it is possible to update the certificate and
+The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and
 key files without restarting the server.
-
-The following environment variables are used when rendering the HTML pages:
-
-| Variable       | Description            | Default   |
-| -------------- | ---------------------- | --------- |
-| `ENV_HOSTNAME` | Hostname of the server | localhost |
 
 ### API
 
@@ -56,40 +47,72 @@ The following environment variables are used when rendering the HTML pages:
 
 #### Responses
 
-| Status | Description                                                                                                                                                        |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 200 OK | Request details in JSON format, including headers, method, URL, body, TLS information and decoded `Authorization` header (basic credentials and JWT bearer token). |
+| Status | Description                     |
+| ------ | ------------------------------- |
+| 200 OK | Request details in JSON format. |
+
+Following fields is included in the response:
+
+- `content_length`: Length of the request body.
+- `env`: Environment variables provided in the configuration.
+- `headers`: Request headers.
+- `host`: Host and port of the server.
+- `method`: HTTP method of the request.
+- `url`: Request URL.
+- `proto`: HTTP protocol version.
+- `remote`: Remote address of the client.
+- `env`: Variables from the process environment that match the `ENV_*` prefix.
+- `tls`: TLS details if the request was made over HTTPS.
+  - `alpn_negotiated_protocol`: Application Layer Protocol Negotiation protocol.
+  - `cipher_suite`: Cipher suite used in the connection.
+  - `peer_certificates`: Peer certificates in PEM format if the client provided a certificate.
+  - `version`: TLS version.
+- `query`: Query parameters of the request if the URL contains a query string.
+- `form`: Form parameters of the request body, if the content type is `application/x-www-form-urlencoded`.
+- `cookies`: Cookies in the request if the request had a `Cookie` header.
+- `body`: Request body.
+- `jwt`: JWT claims if the request had JWT in the `Authorization` header.
+  - `header`: JWT header.
+  - `claims`: JWT claims.
+    - If the `claims` field contains `iat` or `exp` claims, they are converted to human-readable format in the `iat_date` and `exp_date` fields.
+- `basic_auth`: Basic authentication credentials if the request had `Authorization` header with `Basic` scheme.
+  - `username`: Username.
+  - `password`: Password.
 
 ##### Example
 
 ```console
-$ http --cert client.pem --cert-key client-key.pem --verify root-ca.pem https://localhost:8443/foobar
+$ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem --verify testdata/certs/ca.pem https://localhost:8443/foobar
 ```
 
 ```json
 {
-  "content_length": 0,
-  "env": {
-    "ENV_NAMESPACE": "mynamespace",
-    "ENV_POD": "mypod"
-  },
-  "headers": {
-    "Accept": ["*/*"],
-    "Accept-Encoding": ["gzip, deflate, br"],
-    "Connection": ["keep-alive"],
-    "User-Agent": ["HTTPie/3.2.2"]
-  },
-  "host": "localhost:8443",
-  "method": "GET",
-  "proto": "HTTP/1.1",
-  "remote": "127.0.0.1:53378",
-  "tls": {
-    "alpn_negotiated_protocol": "http/1.1",
-    "cipher_suite": "TLS_AES_128_GCM_SHA256",
-    "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBSzCB8qADAgECAggYDDuSRtpjxTAKBggqhkjOPQQDAjASMRAwDgYDVQQDEwdy\nb290LWNhMB4XDTI0MTEyODIwMjQxNloXDTI1MTEyODIwMjQxNlowETEPMA0GA1UE\nAxMGY2xpZW50MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6pRXW7ZNf4Zzi3Qw\nlk4tpGQwi0alJCAKxloR1PfYei1Ixh74Qz2qsrvdTFM40S2CELW4QjRAt0KYA047\n8VWoRaMzMDEwDgYDVR0PAQH/BAQDAgWgMB8GA1UdIwQYMBaAFAif/mnSoWsFX550\nsiR5/dzToWrZMAoGCCqGSM49BAMCA0gAMEUCIQD2mtIiZ/a4TO80KdHDnOwlsWPf\nVuZxTcRNPyBF4F/lVwIgOD7pdL4NfJfRrouUTGvj4ST0+VY2kz2KrkpY0ckmdq4=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBWzCCAQKgAwIBAgIIGAw7kka+ahUwCgYIKoZIzj0EAwIwEjEQMA4GA1UEAxMH\ncm9vdC1jYTAeFw0yNDExMjgyMDI0MTZaFw0yNTExMjgyMDI0MTZaMBIxEDAOBgNV\nBAMTB3Jvb3QtY2EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATUHqYZ2/Esrwf1\nL/+Pra4+q3mA5QeaAxzilwJvm/5Wjk3C+oxTBqgIiRErKQ7DTxkC0U3c5d5/Og6o\nZwGmYXOqo0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/BAUwAwEB/zAdBgNV\nHQ4EFgQUCJ/+adKhawVfnnSyJHn93NOhatkwCgYIKoZIzj0EAwIDRwAwRAIgKAsF\nvgXxODXq5f6jUnIC7muCb/t6zKc0DbM+kTWo0dYCIAIPMKBuXtZVskFjty0zV/H7\nNMK3WmY4Veyco3eUSiQN\n-----END CERTIFICATE-----\n",
-    "version": "TLS 1.3"
-  },
-  "url": "/foobar"
+    "content_length": 0,
+    "headers": {
+        "Accept": [
+            "*/*"
+        ],
+        "Accept-Encoding": [
+            "gzip, deflate"
+        ],
+        "Connection": [
+            "keep-alive"
+        ],
+        "User-Agent": [
+            "HTTPie/3.2.4"
+        ]
+    },
+    "host": "localhost:8443",
+    "method": "GET",
+    "proto": "HTTP/1.1",
+    "remote": "[::1]:57961",
+    "tls": {
+        "alpn_negotiated_protocol": "http/1.1",
+        "cipher_suite": "TLS_AES_128_GCM_SHA256",
+        "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBRTCB7aADAgECAggYEv19hfUwQDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNDEyMjAyMDQ1MjJaFw0yNTEyMjAyMDQ1MjJaMBExDzANBgNVBAMTBmNs\naWVudDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCbhS9nzLiBuFGDUp+vRfUQZ\nJ/pnDgTuJpPWSuPOjDLtZuhewGo5qxBMQBdHUbLruhNQ3bbcfPXXSyMe/VDMb4Sj\nMzAxMA4GA1UdDwEB/wQEAwIFoDAfBgNVHSMEGDAWgBR3JxAyNeNiSa/7Kb8yAfms\np4ozDDAKBggqhkjOPQQDAgNHADBEAiB2U34rNm3HUIsCwyaaixxO0bFulIQbOs0L\nxWM0CqNH+gIgaNm4Yu6rmGb2Ct7+i/k166TtcoSxjvJ11CdEKNTiJos=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUDCB+KADAgECAggYESedInsoiDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNDEyMTQyMTE0NDdaFw0yNTEyMTQyMTE0NDdaMA0xCzAJBgNVBAMTAmNh\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9tDgaO4FFTiQxMauwt1g6BBBmVQu\nkIHPh9diQDiRCPiwF6S+sTCdame3q2vFpyF6MqbmPgzzqjZefuzbQTD+m6NCMEAw\nDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFHcnEDI1\n42JJr/spvzIB+aynijMMMAoGCCqGSM49BAMCA0cAMEQCIFEik3jlxD2MF9wJfdA+\nD5LfA3PFx05dQluCOrANza1sAiBt2VP7MQit8RFQ50CHFydouIcVzMfKGJLVFrKk\n/+NV5A==\n-----END CERTIFICATE-----\n",
+        "version": "TLS 1.3"
+    },
+    "url": "/foobar"
 }
 ```
 
@@ -127,8 +150,7 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 | ---- | --------------------------- |
 | code | HTTP status code to return. |
 
-Optionally, a JSON object can be provided in the body to include additional HTTP
-headers in the response, or the headers can be provided as query parameters.
+Optionally, you can include additional HTTP headers in the response by providing a JSON object in the body or using a query string.
 
 #### Example
 

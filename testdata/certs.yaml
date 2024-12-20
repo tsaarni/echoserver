@@ -10,3 +10,6 @@ issuer: cn=ca
 sans:
   - DNS:echoserver.127.0.0.1.nip.io
   - DNS:localhost
+---
+subject: cn=client
+issuer: cn=ca

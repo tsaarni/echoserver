@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"mime"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -38,6 +39,31 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // echoHandler gathers information about the incoming request and returns it as a JSON response.
 func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
+	info := h.collectRequestInfo(r)
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		slog.Error("Error reading body", "error", err)
+		http.Error(w, "Error reading body", http.StatusBadRequest)
+		return
+	}
+	if len(body) > 0 {
+		info["body"] = string(body)
+	}
+
+	h.processRequestBody(r, body, info)
+
+	w.Header().Set("Content-Type", "application/json")
+	jsonData, err := json.MarshalIndent(info, "", "  ")
+	if err != nil {
+		slog.Error("Error marshaling JSON", "error", err)
+		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
+		return
+	}
+	_, _ = w.Write(jsonData)
+}
+
+func (h *Handler) collectRequestInfo(r *http.Request) map[string]any {
 	info := map[string]any{
 		"method":         r.Method,
 		"url":            r.URL.String(),
@@ -52,16 +78,6 @@ func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 		info["query"] = r.URL.Query()
 	}
 
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		slog.Error("Error reading body", "error", err)
-		http.Error(w, "Error reading body", http.StatusBadRequest)
-		return
-	}
-	if len(body) > 0 {
-		info["body"] = string(body)
-	}
-
 	if r.TLS != nil {
 		h.decodeTLSInfo(r, info)
 	}
@@ -71,18 +87,24 @@ func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 		h.decodeAuthorizationInfo(authorization, info)
 	}
 
+	if cookies := r.Cookies(); len(cookies) > 0 {
+		decodeCookies(cookies, info)
+	}
+
 	if h.envContext != nil {
 		info["env"] = h.envContext
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	jsonData, err := json.MarshalIndent(info, "", "  ")
-	if err != nil {
-		slog.Error("Error marshaling JSON", "error", err)
-		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
-		return
+	return info
+}
+
+func (h *Handler) processRequestBody(r *http.Request, body []byte, info map[string]any) {
+	if r.Header.Get("Content-Type") == "application/x-www-form-urlencoded" {
+		values, err := url.ParseQuery(string(body))
+		if err == nil {
+			info["form"] = values
+		}
 	}
-	_, _ = w.Write(jsonData)
 }
 
 // decodeTLSInfo extracts TLS information from the request.
@@ -190,6 +212,14 @@ func parseBasicAuth(encoded string, info map[string]any) error {
 		"password": parts[1],
 	}
 	return nil
+}
+
+func decodeCookies(cookies []*http.Cookie, info map[string]any) {
+	c := map[string]string{}
+	for _, cookie := range cookies {
+		c[cookie.Name] = cookie.Value
+	}
+	info["cookies"] = c
 }
 
 // statusHandler returns a response with the provided status code.
