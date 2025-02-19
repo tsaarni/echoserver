@@ -31,6 +31,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.statusHandler(w, r)
 	case strings.HasPrefix(r.URL.Path, "/apps/"):
 		h.templateHandler(w, r)
+	case r.URL.Path == "/sse":
+		h.serverSentEventHandler(w, r)
 	default:
 		h.echoHandler(w, r)
 	}
@@ -301,5 +303,40 @@ func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		slog.Error("Error executing template", "error", err)
 		http.Error(w, "Error executing template", http.StatusInternalServerError)
+	}
+}
+
+// serverSentEventHandler implements a long polling server that periodically sends "ping" messages.
+func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handling stream request", "url", r.URL.String())
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	ctx := r.Context()
+	counter := 0
+
+	for {
+		select {
+		case <-ticker.C:
+			timestamp := time.Now().Format(time.RFC3339)
+			counter++
+			message := fmt.Sprintf("data: { \"timestamp\": \"%s\", \"counter\": \"%d\" }\n\n", timestamp, counter)
+			_, err := w.Write([]byte(message))
+			if err != nil {
+				slog.Error("Error writing to stream", "error", err)
+				return
+			}
+
+			if f, ok := w.(http.Flusher); ok {
+				f.Flush()
+			}
+		case <-ctx.Done():
+			slog.Info("Client disconnected")
+			return
+		}
 	}
 }

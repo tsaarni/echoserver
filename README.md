@@ -191,6 +191,36 @@ Set-Cookie: hello=world
 
 </details>
 
+
+<details>
+<summary><code>/sse</code> Server-Sent Events (SSE) endpoint that sends a message every second.</summary>
+</details>
+
+#### Responses
+
+| Status | Description            |
+| ------ | ---------------------- |
+| 200 OK | Server is operational. |
+
+
+#### Example
+
+Server will respond with `Content-Type: text/event-stream` with the following content:
+
+```http
+HTTP/1.1 200 OK
+Cache-Control: no-cache
+Connection: keep-alive
+Content-Type: text/event-stream
+Date: Wed, 19 Feb 2025 10:10:15 GMT
+Transfer-Encoding: chunked
+
+data: { "counter": "1", "timestamp": "2025-02-19T12:10:15+02:00" }
+
+data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
+...
+```
+
 <details>
 <summary><code>/apps/</code> Returns a list of available applications.</summary>
 </details>
@@ -245,7 +275,7 @@ Example commands in the descriptions are given using the
 To build and run the echoserver locally, use the following commands:
 
 ```sh
-make build
+make
 ./echoserver
 ```
 
