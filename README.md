@@ -194,7 +194,6 @@ Set-Cookie: hello=world
 
 <details>
 <summary><code>/sse</code> Server-Sent Events (SSE) endpoint that sends a message every second.</summary>
-</details>
 
 #### Responses
 
@@ -220,6 +219,7 @@ data: { "counter": "1", "timestamp": "2025-02-19T12:10:15+02:00" }
 data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 ...
 ```
+</details>
 
 <details>
 <summary><code>/apps/</code> Returns a list of available applications.</summary>
