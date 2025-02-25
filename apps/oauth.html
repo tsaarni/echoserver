@@ -129,7 +129,7 @@
           log.info('No token received, please log in');
         }
       } catch (error) {
-        log.error(error);
+        log.error(`IDP not reachable? Please reload the application again: ${error.message}`);
       }
     </script>
   </body>

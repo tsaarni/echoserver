@@ -132,11 +132,12 @@ class OAuth {
       this.#log.info(`GET ${this.#wellKnownEndpoint}`);
       const response = await fetch(this.#wellKnownEndpoint);
       if (!response.ok) {
+        this.#log.error(`Failed to fetch well-known configuration: ${response.status}`);
         throw new Error('Failed to fetch well-known configuration');
       }
       return response.json();
     } catch (error) {
-      this.#log.error(error);
+      this.#log.error(`Failed to fetch well-known configuration: ${this.#wellKnownEndpoint}: ${error}`);
       throw error;
     }
   }
