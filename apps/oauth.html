@@ -22,6 +22,7 @@
         <button id="login">Login</button>
         <button id="refresh">Refresh</button>
         <button id="logout">Logout</button>
+        <button id="logout-redirect">Logout and redirect</button>
       </fieldset>
 
       <label for="requestUrl">Path:</label>
@@ -112,10 +113,16 @@
         }
       });
 
-      // Log out when the logout button is clicked.
+      // Logout when the logout button is clicked.
       document.getElementById('logout').addEventListener('click', () => {
         log.info('Logging out');
         oauthClient.logout();
+      });
+
+      // Logout via a redirect when the logout-redirect button is clicked.
+      document.getElementById('logout-redirect').addEventListener('click', () => {
+        log.info('Logging out via redirect');
+        oauthClient.logoutWithRedirect(`${window.location.origin}/logout`);
       });
 
       // When the page loads, check if there is an authorization code in the URL.

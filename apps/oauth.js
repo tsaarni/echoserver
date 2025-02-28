@@ -90,6 +90,14 @@ class OAuth {
   }
 
   /**
+   * logoutWithRedirect logs out the user by revoking the refresh token and redirects to the specified URL.
+   * @param {string} redirectUri The URL to redirect to after logout.
+   */
+  logoutWithRedirect(redirectUri) {
+    window.location.href = this.#endSessionEndpoint + '?client_id=' + this.#clientId + '&post_logout_redirect_uri=' + redirectUri;
+  }
+
+  /**
    * handleRedirect handles the redirect from the login page.
    * @returns {Promise} A promise that resolves with the token response.
    * @throws {Error} If the token cannot be fetched.
