@@ -42,10 +42,10 @@ key files without restarting the server.
 
 ### API
 
+#### <code>/*</code> - Returns request details in JSON format.
 <details>
-<summary><code>/*</code> Returns request details in JSON format.</summary>
 
-#### Responses
+##### Responses
 
 | Status | Description                     |
 | ------ | ------------------------------- |
@@ -115,19 +115,19 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
     "url": "/foobar"
 }
 ```
-
 </details>
 
-<details>
-<summary><code>/status</code> Returns a `200 OK` status, indicating the server is operational.</summary>
+#### <code>/status</code> - Returns a `200 OK` status, indicating the server is operational.
 
-#### Responses
+<details>
+
+##### Responses
 
 | Status | Description            |
 | ------ | ---------------------- |
 | 200 OK | Server is operational. |
 
-#### Example
+##### Example
 
 ```console
 $ http GET http://localhost:8080/status
@@ -141,10 +141,11 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 
 </details>
 
+#### <code>/status/{code}</code>
+Returns the specified HTTP status code.
 <details>
-<summary><code>/status/{code}</code> Returns the specified HTTP status code.</summary>
 
-#### Parameters
+##### Parameters
 
 | Name | Description                 |
 | ---- | --------------------------- |
@@ -152,7 +153,7 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 
 Optionally, you can include additional HTTP headers in the response by providing a JSON object in the body or using a query string.
 
-#### Example
+##### Example
 
 ```sh
 $ http POST http://localhost:8080/status/301 Location=http://localhost/bar
@@ -192,17 +193,18 @@ Set-Cookie: hello=world
 </details>
 
 
-<details>
-<summary><code>/sse</code> Server-Sent Events (SSE) endpoint that sends a message every second.</summary>
+#### <code>/sse</code> - Server-Sent Events (SSE) endpoint that sends a message every second.
 
-#### Responses
+<details>
+
+##### Responses
 
 | Status | Description            |
 | ------ | ---------------------- |
 | 200 OK | Server is operational. |
 
 
-#### Example
+##### Example
 
 Server will respond with `Content-Type: text/event-stream` with the following content:
 
@@ -221,12 +223,13 @@ data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 ```
 </details>
 
-<details>
-<summary><code>/apps/</code> Returns a list of available applications.</summary>
-</details>
+#### <code>/apps/</code> - Returns a list of available applications.
+
+#### <code>/apps/fetch.html</code> - Interactive HTTP request tool.
 
 <details>
-<summary><code>/apps/fetch.html</code> Interactive HTTP request tool.</summary>
+
+##### Description
 
 A JavaScript application that enables users to make HTTP requests towards the
 echoserver using different methods and view the responses.
@@ -235,8 +238,11 @@ echoserver using different methods and view the responses.
 
 </details>
 
+#### <code>/apps/form.html</code> - HTML form submission.
+
 <details>
-<summary><code>/apps/form.html</code> HTML form submission.</summary>
+
+##### Description
 
 An HTML form that enables data submission using both `POST` and `GET` methods
 towards the echoserver.
@@ -245,8 +251,11 @@ towards the echoserver.
 
 </details>
 
+#### <code>/apps/oauth.html</code> - Interactive OAuth2 client.
+
 <details>
-<summary><code>/apps/oauth.html</code> Interactive OAuth2 client.</summary>
+
+##### Description
 
 OAuth2-aware JavaScript application that implements the Authorization Code flow.
 It allows users to interactively trigger login/refresh/logout and to make
@@ -256,8 +265,11 @@ authenticated requests towards the echoserver and view the responses.
 
 </details>
 
+#### <code>/apps/keycloak.html</code> - Interactive client using keycloak-js adapter.
+
 <details>
-<summary><code>/apps/keycloak.html</code> Interactive client using keycloak-js adapter.</summary>
+
+##### Description
 
 OAuth2-aware JavaScript application that uses the
 [Keycloak-js](https://www.keycloak.org/securing-apps/javascript-adapter)
