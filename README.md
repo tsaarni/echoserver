@@ -36,6 +36,7 @@ Following table lists the available configuration options:
 | `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file.                                                                                                  |         |
 |                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates. |         |
 | `-live`          |                 | Serve static files directly from the `./apps` dorectory instead of using bundled files in the binary.                  | `false` |
+|                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for mor information.                 |         |
 
 The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and
 key files without restarting the server.
@@ -323,3 +324,5 @@ and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/. Envoy will
 validate JWT for endpoints matching with
 https://echoserver.127.0.0.1.nip.io/protected.
 The admin console credentials are `admin:admin`, and the user credentials in `echoserver` realm are `joe:joe` and `jane:jane`.
+
+[1]: https://wiki.wireshark.org/TLS#tls-decryption

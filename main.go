@@ -5,6 +5,7 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -19,11 +20,12 @@ const (
 )
 
 type Config struct {
-	Live      bool
-	HTTPAddr  string
-	HTTPSAddr string
-	CertFile  string
-	KeyFile   string
+	Live       bool
+	HTTPAddr   string
+	HTTPSAddr  string
+	CertFile   string
+	KeyFile    string
+	KeyLogFile string
 }
 
 var (
@@ -53,6 +55,7 @@ func newConfig() *Config {
 		fmt.Fprintf(os.Stderr, "  TLS_CERT_FILE\n\tPath to TLS certificate file\n")
 		fmt.Fprintf(os.Stderr, "  TLS_KEY_FILE\n\tPath to TLS key file\n")
 		fmt.Fprintf(os.Stderr, "  ENV_*\n\tEnvironment variables to be used as context info in the echo response\n")
+		fmt.Fprintf(os.Stderr, "  SSLKEYLOGFILE\n\tPath to write the TLS master secret log file\n")
 	}
 
 	flag.Parse()
@@ -68,11 +71,12 @@ func newConfig() *Config {
 	}
 
 	return &Config{
-		Live:      *live,
-		HTTPAddr:  getEnv("HTTP_ADDR", *httpAddr, defaultHTTPAddr),
-		HTTPSAddr: getEnv("HTTPS_ADDR", *httpsAddr, defaultHTTPSAddr),
-		CertFile:  getEnv("TLS_CERT_FILE", *certFile, ""),
-		KeyFile:   getEnv("TLS_KEY_FILE", *keyFile, ""),
+		Live:       *live,
+		HTTPAddr:   getEnv("HTTP_ADDR", *httpAddr, defaultHTTPAddr),
+		HTTPSAddr:  getEnv("HTTPS_ADDR", *httpsAddr, defaultHTTPSAddr),
+		CertFile:   getEnv("TLS_CERT_FILE", *certFile, ""),
+		KeyFile:    getEnv("TLS_KEY_FILE", *keyFile, ""),
+		KeyLogFile: os.Getenv("SSLKEYLOGFILE"),
 	}
 }
 
@@ -98,7 +102,7 @@ func startHTTPServer(addr string) {
 	}
 }
 
-func startHTTPSServer(addr string, certFile, keyFile string) {
+func startHTTPSServer(addr string, certFile, keyFile string, keyLogFile string) {
 	lookupCert := func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 		if err != nil {
@@ -114,6 +118,16 @@ func startHTTPSServer(addr string, certFile, keyFile string) {
 		os.Exit(1)
 	}
 
+	var keyLogWriter io.Writer
+	if keyLogFile != "" {
+		keyLogWriter, err = os.OpenFile(keyLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600)
+		if err != nil {
+			slog.Error("Error opening key log file", "error", err)
+			os.Exit(1)
+		}
+		slog.Info("Enabling TLS master secret logging", "SSLKEYLOGFILE", keyLogFile)
+	}
+
 	server := &http.Server{
 		Addr:              addr,
 		ReadHeaderTimeout: time.Duration(5) * time.Second,
@@ -121,6 +135,7 @@ func startHTTPSServer(addr string, certFile, keyFile string) {
 	server.TLSConfig = &tls.Config{ // #nosec // G402: TLS MinVersion too low.
 		ClientAuth:     tls.RequestClientCert,
 		GetCertificate: lookupCert,
+		KeyLogWriter:   keyLogWriter,
 	}
 	slog.Info("Server is running in HTTPS mode", "address", server.Addr,
 		"tls_cert_file", certFile, "tls_key_file", keyFile)
@@ -163,7 +178,7 @@ func main() {
 	http.Handle("/", handler)
 
 	if config.CertFile != "" && config.KeyFile != "" {
-		go startHTTPSServer(config.HTTPSAddr, config.CertFile, config.KeyFile)
+		go startHTTPSServer(config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
 	}
 
 	go startHTTPServer(config.HTTPAddr)
