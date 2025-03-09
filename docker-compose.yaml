@@ -7,7 +7,7 @@ services:
       - -cxe
       - |
         /opt/keycloak/bin/kc.sh import --verbose --file=/input/testdata/keycloak-realm.json
-        /opt/keycloak/bin/kc.sh start
+        /opt/keycloak/bin/kc.sh start --features=dpop
 
     environment:
       - KC_BOOTSTRAP_ADMIN_USERNAME=admin
