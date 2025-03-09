@@ -32,13 +32,30 @@ class PersistentValues {
    */
   bind() {
     this.elements.forEach((element) => {
-      element.value = this.persistedValues[element.id] || this.defaultValues[element.id];
+      const persistedValue = this.persistedValues[element.id];
+      const defaultValue = this.defaultValues[element.id];
+      const isCheckbox = element.type === 'checkbox';
+
+      if (isCheckbox) {
+        // Checkbox: persisted value is undefined/false/true.
+        element.checked = persistedValue === undefined ? defaultValue : persistedValue;
+      } else {
+        // Other: persisted value is undefined or the value.
+        element.value = persistedValue || defaultValue;
+      }
+
       element.addEventListener('change', () => {
-        if (element.value === this.defaultValues[element.id]) {
+        // Read the current value either from the checkbox state or the value.
+        const currentValue = isCheckbox ? element.checked : element.value;
+
+        if (currentValue === defaultValue) {
+          // If the current value is the default value, remove the persisted value.
           delete this.persistedValues[element.id];
         } else {
-          this.persistedValues[element.id] = element.value;
+          // Otherwise, store the current value.
+          this.persistedValues[element.id] = currentValue;
         }
+        // Save the current persisted values to localStorage.
         this.save();
       });
     });
