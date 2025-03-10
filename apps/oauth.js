@@ -1,3 +1,6 @@
+import { generateDpopProof, getKeyPair, dpopStringify } from './oauthdpop.js';
+import { generateCodeVerifier, generateCodeChallenge } from './oauthpkce.js';
+
 /**
  * OAuth implements authorization code flow and refresh token flow.
  */
@@ -9,6 +12,8 @@ class OAuth {
   #redirectUri;
   #wellKnownEndpoint;
   #log;
+  #usePkce = false;
+  #useDpop = false;
 
   // Configuration from well-known endpoint.
   #authEndpoint;
@@ -19,11 +24,33 @@ class OAuth {
   #accessToken;
   #refreshToken;
 
-  constructor(clientId, wellKnownEndpoint, redirectUri, logger) {
-    this.#clientId = clientId;
-    this.#wellKnownEndpoint = wellKnownEndpoint;
-    this.#redirectUri = redirectUri;
+  constructor(logger) {
     this.#log = logger;
+  }
+
+  useClientId(clientId) {
+    this.#clientId = clientId;
+    return this;
+  }
+
+  useWellKnownEndpoint(wellKnownEndpoint) {
+    this.#wellKnownEndpoint = wellKnownEndpoint;
+    return this;
+  }
+
+  useRedirectUri(redirectUri) {
+    this.#redirectUri = redirectUri
+    return this;
+  }
+
+  usePkce(usePkce) {
+    this.#usePkce = usePkce;
+    return this;
+  }
+
+  useDpop(useDpop) {
+    this.#useDpop = useDpop;
+    return this;
   }
 
   /**
@@ -53,10 +80,18 @@ class OAuth {
   /**
    * loadLoginPage redirects the browser to the login page.
    */
-  loadLoginPage() {
-    const authUrl = `${this.#authEndpoint}?response_type=code&client_id=${
+  async loadLoginPage() {
+    let authUrl = `${this.#authEndpoint}?response_type=code&client_id=${
       this.#clientId
     }&redirect_uri=${encodeURIComponent(this.#redirectUri)}&response_mode=fragment`;
+
+    if (this.#usePkce) {
+      const codeVerifier = generateCodeVerifier();
+      const codeChallenge = await generateCodeChallenge(codeVerifier);
+      localStorage.setItem('code-verifier', codeVerifier);
+      authUrl += `&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    }
+
     window.location.href = authUrl;
   }
 
@@ -152,21 +187,36 @@ class OAuth {
 
   // Fetch token using authorization code
   async #fetchTokenWithAuthorizationCode(code) {
+    let body = {
+      code: code,
+      client_id: this.#clientId,
+      redirect_uri: this.#redirectUri,
+      grant_type: 'authorization_code',
+    };
+
+    if (this.#usePkce) {
+      this.#log.info('Using PKCE');
+      body.code_verifier = localStorage.getItem('code-verifier');
+    }
+
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    if (this.#useDpop) {
+      const keyPair = await getKeyPair();
+      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, keyPair);
+      this.#log.info('Using DPoP');
+      this.#log.info('DPoP proof JWT', dpopStringify(headers.DPoP));
+    }
+
     this.#log.info(
-      `POST ${this.#tokenEndpoint} with
-        code=${code} clientId=${this.#clientId} redirectUri=${this.#redirectUri} grantType=authorization_code`
+      `POST ${this.#tokenEndpoint} with body ${JSON.stringify(body)}`
     );
     const response = await fetch(this.#tokenEndpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        code: code,
-        client_id: this.#clientId,
-        redirect_uri: this.#redirectUri,
-        grant_type: 'authorization_code',
-      }),
+      headers: headers,
+      body: new URLSearchParams(body),
     });
 
     if (!response.ok) {
@@ -181,11 +231,20 @@ class OAuth {
 
   // Fetch token using refresh token
   async #fetchTokenWithRefreshToken() {
+    const headers = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    if (this.#useDpop) {
+      const keyPair = await getKeyPair();
+      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, keyPair);
+      this.#log.info('Using DPoP');
+      this.#log.info('DPoP proof JWT', dpopStringify(headers.DPoP));
+    }
+
     const response = await fetch(this.#tokenEndpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: headers,
       body: new URLSearchParams({
         refresh_token: this.#refreshToken,
         client_id: this.#clientId,

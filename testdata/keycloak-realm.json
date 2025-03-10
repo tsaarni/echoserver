@@ -11,7 +11,8 @@
       "publicClient": true,
       "protocol": "openid-connect",
       "attributes": {
-        "post.logout.redirect.uris": "https://echoserver.127.0.0.1.nip.io/*"
+        "post.logout.redirect.uris": "https://echoserver.127.0.0.1.nip.io/*",
+        "dpop.bound.access.tokens": "true"
       },
       "fullScopeAllowed": true,
       "defaultClientScopes": ["web-origins", "acr", "roles", "profile", "echoserver-audience", "basic", "email"]

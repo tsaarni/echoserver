@@ -17,12 +17,22 @@
       <input type="text" id="client-id" />
       <label for="openid-well-known-url">Well-known URL:</label>
       <input type="text" id="openid-well-known-url" />
+
+      <label for="client-options">Options:</label>
+      <fieldset id="client-options">
+        <label for="enable-pkce">PKCE</label>
+        <input type="checkbox" id="enable-pkce" />
+        <label for="enable-dpop">DPoP</label>
+        <input type="checkbox" id="enable-dpop" />
+        <label for="logout-with-redirect">Logout with redirect</label>
+        <input type="checkbox" id="logout-with-redirect" />
+      </fieldset>
+
       <label for="oauth-operation">OAuth operations:</label>
       <fieldset id="oauth-operation">
         <button id="login">Login</button>
         <button id="refresh">Refresh</button>
         <button id="logout">Logout</button>
-        <button id="logout-redirect">Logout and redirect</button>
       </fieldset>
 
       <label for="requestUrl">Path:</label>
@@ -59,15 +69,19 @@
         .addElement(
           document.getElementById('openid-well-known-url'),
           'https://keycloak.127.0.0.1.nip.io/realms/echoserver/.well-known/openid-configuration'
-        );
+        )
+        .addElement(document.getElementById('enable-pkce'), true)
+        .addElement(document.getElementById('enable-dpop'), true)
+        .addElement(document.getElementById('logout-with-redirect'), false);
       clientValues.bind();
 
-      const oauthClient = new OAuth(
-        document.getElementById('client-id').value,
-        document.getElementById('openid-well-known-url').value,
-        window.location.origin + window.location.pathname, // redirect_uri
-        log
-      );
+      const oauthClient = new OAuth(log);
+      oauthClient
+        .useClientId(document.getElementById('client-id').value)
+        .useWellKnownEndpoint(document.getElementById('openid-well-known-url').value)
+        .useRedirectUri(window.location.origin + window.location.pathname)
+        .usePkce(document.getElementById('enable-pkce').checked)
+        .useDpop(document.getElementById('enable-dpop').checked);
 
       document.getElementById('clear-log').addEventListener('click', () => log.clear());
 
@@ -98,7 +112,10 @@
       // Load the login page when the login button is clicked.
       document.getElementById('login').addEventListener('click', () => {
         log.info('Loading login page');
-        oauthClient.loadLoginPage();
+        oauthClient
+          .usePkce(document.getElementById('enable-pkce').checked)
+          .useDpop(document.getElementById('enable-dpop').checked)
+          .loadLoginPage();
       });
 
       // Refresh the token when the refresh button is clicked.
@@ -116,13 +133,11 @@
       // Logout when the logout button is clicked.
       document.getElementById('logout').addEventListener('click', () => {
         log.info('Logging out');
-        oauthClient.logout();
-      });
-
-      // Logout via a redirect when the logout-redirect button is clicked.
-      document.getElementById('logout-redirect').addEventListener('click', () => {
-        log.info('Logging out via redirect');
-        oauthClient.logoutWithRedirect(`${window.location.origin}/logout`);
+        if (document.getElementById('logout-with-redirect').checked) {
+          oauthClient.logoutWithRedirect(`${window.location.origin}/logout`);
+        } else {
+          oauthClient.logout();
+        }
       });
 
       // When the page loads, check if there is an authorization code in the URL.
