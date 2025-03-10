@@ -1,3 +1,4 @@
+import { generateDpopProof, getKeyPair, dpopStringify } from './oauthdpop.js';
 import { generateCodeVerifier, generateCodeChallenge } from './oauthpkce.js';
 
 /**
@@ -12,6 +13,7 @@ class OAuth {
   #wellKnownEndpoint;
   #log;
   #usePkce = false;
+  #useDpop = false;
 
   // Configuration from well-known endpoint.
   #authEndpoint;
@@ -46,13 +48,23 @@ class OAuth {
     return this;
   }
 
+  useDpop(useDpop) {
+    this.#useDpop = useDpop;
+    return this;
+  }
+
   /**
    * Getter for access token.
-   * @returns {string} The access token.
+   * @returns {string} Authorization header
    */
-  get accessToken() {
-    return this.#accessToken;
+  getAuthorizationHeader() {
+    if (!this.#accessToken) {
+      this.#log.error('Access token not available');
+      throw new Error('Access token not available');
+    }
+    return this.#useDpop ? `DPoP ${this.#accessToken}` : `Bearer ${this.#accessToken}`;
   }
+
 
   /**
    * Refresh the access token using the refresh token.
@@ -196,6 +208,13 @@ class OAuth {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
 
+    if (this.#useDpop) {
+      const keyPair = await getKeyPair();
+      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, keyPair);
+      this.#log.info('Using DPoP');
+      this.#log.info('DPoP proof JWT', dpopStringify(headers.DPoP));
+    }
+
     this.#log.info(
       `POST ${this.#tokenEndpoint} with body:`, JSON.stringify(body)
     );
@@ -212,7 +231,9 @@ class OAuth {
       );
     }
 
-    return await response.json();
+    const data = await response.json();
+    this.#log.info('Received token response', JSON.stringify(data));
+    return data;
   }
 
   // Fetch token using refresh token
@@ -221,14 +242,26 @@ class OAuth {
       'Content-Type': 'application/x-www-form-urlencoded',
     };
 
+    if (this.#useDpop) {
+      const keyPair = await getKeyPair();
+      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, keyPair);
+      this.#log.info('Using DPoP');
+      this.#log.info('DPoP proof JWT', dpopStringify(headers.DPoP));
+    }
+
+    const body = {
+      refresh_token: this.#refreshToken,
+      client_id: this.#clientId,
+      grant_type: 'refresh_token',
+    };
+
+    this.#log.info(
+      `POST ${this.#tokenEndpoint} with body:`, JSON.stringify(body)
+    );
     const response = await fetch(this.#tokenEndpoint, {
       method: 'POST',
       headers: headers,
-      body: new URLSearchParams({
-        refresh_token: this.#refreshToken,
-        client_id: this.#clientId,
-        grant_type: 'refresh_token',
-      }),
+      body: new URLSearchParams(body),
     });
     if (!response.ok) {
       const error = await response.json();
@@ -236,7 +269,9 @@ class OAuth {
         `Failed to fetch token: status=${response.status} error=${error.error} error_description=${error.error_description} `
       );
     }
-    return await response.json();
+    const data = await response.json();
+    this.#log.info('Received token response', JSON.stringify(data));
+    return data;
   }
 }
 

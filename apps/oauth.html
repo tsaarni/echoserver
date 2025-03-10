@@ -22,6 +22,8 @@
       <fieldset id="client-options">
         <label for="enable-pkce">PKCE</label>
         <input type="checkbox" id="enable-pkce" />
+        <label for="enable-dpop">DPoP</label>
+        <input type="checkbox" id="enable-dpop" />
         <label for="logout-with-redirect">Logout with redirect</label>
         <input type="checkbox" id="logout-with-redirect" />
       </fieldset>
@@ -69,6 +71,7 @@
           'https://keycloak.127.0.0.1.nip.io/realms/echoserver/.well-known/openid-configuration'
         )
         .addElement(document.getElementById('enable-pkce'), true)
+        .addElement(document.getElementById('enable-dpop'), true)
         .addElement(document.getElementById('logout-with-redirect'), false);
       clientValues.bind();
 
@@ -77,7 +80,8 @@
         .useClientId(document.getElementById('client-id').value)
         .useWellKnownEndpoint(document.getElementById('openid-well-known-url').value)
         .useRedirectUri(window.location.origin + window.location.pathname)
-        .usePkce(document.getElementById('enable-pkce').checked);
+        .usePkce(document.getElementById('enable-pkce').checked)
+        .useDpop(document.getElementById('enable-dpop').checked);
 
       document.getElementById('clear-log').addEventListener('click', () => log.clear());
 
@@ -90,7 +94,7 @@
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              Authorization: oauthClient.accessToken ? `Bearer ${oauthClient.accessToken}` : '',
+              Authorization: oauthClient.getAuthorizationHeader(),
             },
             body: method === 'GET' ? undefined : JSON.stringify(body),
           };
@@ -105,12 +109,20 @@
       document.getElementById('fetch-get').addEventListener('click', () => fetchResource('GET'));
       document.getElementById('fetch-post').addEventListener('click', () => fetchResource('POST'));
 
+      // Update the client when PKCE is enabled or disabled.
+      document.getElementById('enable-pkce').addEventListener('change', () => {
+        oauthClient.usePkce(document.getElementById('enable-pkce').checked);
+      });
+
+      // Update the client when DPoP is enabled or disabled.
+      document.getElementById('enable-dpop').addEventListener('change', () => {
+        oauthClient.useDpop(document.getElementById('enable-dpop').checked);
+      });
+
       // Load the login page when the login button is clicked.
       document.getElementById('login').addEventListener('click', () => {
         log.info('Loading login page');
-        oauthClient
-          .usePkce(document.getElementById('enable-pkce').checked)
-          .loadLoginPage();
+        oauthClient.loadLoginPage();
       });
 
       // Refresh the token when the refresh button is clicked.
