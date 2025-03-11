@@ -1,3 +1,13 @@
+async function generateKeyPair() {
+  return await crypto.subtle.generateKey(
+    {
+      name: 'ECDSA',
+      namedCurve: 'P-256',
+    },
+    false, // non-exportable
+    ['sign', 'verify']
+  );
+}
 async function generateDpopProof(httpMethod, httpUrl, keyPair) {
   const publicKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
   const jwtHeader = {
@@ -27,57 +37,6 @@ async function generateDpopProof(httpMethod, httpUrl, keyPair) {
   return `${jwtUnsigned}.${jwtSignatureBase64}`;
 }
 
-async function getKeyPair() {
-  if (localStorage.getItem('dpop-key-pair')) {
-    const exportedKeyPair = JSON.parse(localStorage.getItem('dpop-key-pair'));
-    return importKeyPair(exportedKeyPair);
-  }
-
-  const keyPair = await crypto.subtle.generateKey(
-    {
-      name: 'ECDSA',
-      namedCurve: 'P-256',
-    },
-    true,
-    ['sign', 'verify']
-  );
-
-  const exportedKeyPair = await exportKeyPair(keyPair);
-  localStorage.setItem('dpop-key-pair', JSON.stringify(exportedKeyPair));
-  return keyPair;
-}
-
-async function exportKeyPair(keyPair) {
-  const exportedKeyPair = {
-    publicKey: await crypto.subtle.exportKey('jwk', keyPair.publicKey),
-    privateKey: await crypto.subtle.exportKey('jwk', keyPair.privateKey),
-    algorithm: keyPair.publicKey.algorithm,
-    usages: {
-      publicKey: keyPair.publicKey.usages,
-      privateKey: keyPair.privateKey.usages,
-    },
-  };
-  return exportedKeyPair;
-}
-
-async function importKeyPair(exportedKeyPair) {
-  const publicKey = await crypto.subtle.importKey(
-    'jwk',
-    exportedKeyPair.publicKey,
-    exportedKeyPair.algorithm,
-    true,
-    exportedKeyPair.usages.publicKey
-  );
-  const privateKey = await crypto.subtle.importKey(
-    'jwk',
-    exportedKeyPair.privateKey,
-    exportedKeyPair.algorithm,
-    true,
-    exportedKeyPair.usages.privateKey
-  );
-  return { publicKey, privateKey };
-}
-
 function dpopStringify(dpop) {
   const parts = dpop.split('.');
   const header = JSON.parse(atob(parts[0]));
@@ -98,4 +57,4 @@ function base64URLEncode(input) {
     .replace(/=+$/, '');
 }
 
-export { generateDpopProof, getKeyPair, dpopStringify };
+export { generateKeyPair, generateDpopProof, dpopStringify };

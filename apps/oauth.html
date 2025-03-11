@@ -101,7 +101,11 @@
           log.info(`Request ${method} to ${url}`, request.headers);
 
           const response = await fetch(url, request);
-          log.info(`Response status: ${response.status}`, await response.text());
+          if (response.ok) {
+            log.info(`Response status: ${response.status}`, await response.json());
+          } else {
+            log.error(`Response status: ${response.status}`, await response.text());
+          }
         } catch (error) {
           log.error(error);
         }
@@ -140,10 +144,14 @@
       // Logout when the logout button is clicked.
       document.getElementById('logout').addEventListener('click', () => {
         log.info('Logging out');
-        if (document.getElementById('logout-with-redirect').checked) {
-          oauthClient.logoutWithRedirect(`${window.location.origin}/logout`);
-        } else {
-          oauthClient.logout();
+        try {
+          if (document.getElementById('logout-with-redirect').checked) {
+            oauthClient.logoutWithRedirect(`${window.location.origin}/logout`);
+          } else {
+            oauthClient.logout();
+          }
+        } catch (error) {
+          log.error('Logout failed', error);
         }
       });
 

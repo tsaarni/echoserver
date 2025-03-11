@@ -1,4 +1,4 @@
-import { generateDpopProof, getKeyPair, dpopStringify } from './oauthdpop.js';
+import { generateKeyPair, generateDpopProof, dpopStringify } from './oauthdpop.js';
 import { generateCodeVerifier, generateCodeChallenge } from './oauthpkce.js';
 
 /**
@@ -23,6 +23,10 @@ class OAuth {
   // Access token and refresh token from authorization server.
   #accessToken;
   #refreshToken;
+
+  // DPoP key pair for DPoP proof.
+  // Generated during authorization_code grant request and used during refresh token request and resource request.
+  #dpopKeyPair;
 
   constructor(logger) {
     this.#log = logger;
@@ -56,12 +60,13 @@ class OAuth {
   /**
    * Getter for access token.
    * @returns {string} Authorization header
+   * @throws {Error} If the access token has not been fetched.
    */
   getAuthorizationHeader() {
     if (!this.#accessToken) {
-      this.#log.error('Access token not available');
       throw new Error('Access token not available');
     }
+    // If DPoP is enabled, use DPoP header, otherwise use Bearer header.
     return this.#useDpop ? `DPoP ${this.#accessToken}` : `Bearer ${this.#accessToken}`;
   }
 
@@ -91,10 +96,14 @@ class OAuth {
     }&redirect_uri=${encodeURIComponent(this.#redirectUri)}&response_mode=fragment`;
 
     if (this.#usePkce) {
+      this.#log.info('PKCE is enabled. Generating code verifier and challenge.');
+
       const codeVerifier = generateCodeVerifier();
       const codeChallenge = await generateCodeChallenge(codeVerifier);
-      localStorage.setItem('code-verifier', codeVerifier);
       authUrl += `&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+
+      // Store the code verifier in localStorage for using it when fetching the token.
+      localStorage.setItem('code-verifier', codeVerifier);
     }
 
     window.location.href = authUrl;
@@ -105,28 +114,24 @@ class OAuth {
    * @throws {Error} If the logout fails.
    */
   async logout() {
-    try {
-      this.#log.info(`POST ${this.#endSessionEndpoint}`);
-      const response = await fetch(this.#endSessionEndpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          client_id: this.#clientId,
-          refresh_token: this.#refreshToken,
-        }),
-      });
-      this.#log.info(`Response: ${response.status}`);
-      if (!response.ok) {
-        throw new Error('Failed to logout');
-      }
-      this.#accessToken = undefined;
-      this.#refreshToken = undefined;
-    } catch (error) {
-      this.#log.error(error);
-      throw error;
+    this.#log.info(`POST ${this.#endSessionEndpoint}`);
+    const response = await fetch(this.#endSessionEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: this.#clientId,
+        refresh_token: this.#refreshToken,
+      }),
+    });
+    this.#log.info(`Response: ${response.status}`);
+    if (!response.ok) {
+      throw new Error('Failed to logout');
     }
+    this.#accessToken = undefined;
+    this.#refreshToken = undefined;
+    this.#dpopKeyPair = undefined;
   }
 
   /**
@@ -162,7 +167,6 @@ class OAuth {
         this.#refreshToken = response.refresh_token;
         return response;
       } catch (error) {
-        this.#log.error(error);
         throw new Error(error.message);
       }
     }
@@ -180,13 +184,11 @@ class OAuth {
       this.#log.info(`GET ${this.#wellKnownEndpoint}`);
       const response = await fetch(this.#wellKnownEndpoint);
       if (!response.ok) {
-        this.#log.error(`Failed to fetch well-known configuration: ${response.status}`);
-        throw new Error('Failed to fetch well-known configuration');
+        throw new Error(`Failed to fetch well-known configuration: ${this.#wellKnownEndpoint}: ${response.status}`);
       }
       return response.json();
     } catch (error) {
-      this.#log.error(`Failed to fetch well-known configuration: ${this.#wellKnownEndpoint}: ${error}`);
-      throw error;
+      throw new Error(`Failed to fetch well-known configuration: ${this.#wellKnownEndpoint}: ${error}`);
     }
   }
 
@@ -200,7 +202,7 @@ class OAuth {
     };
 
     if (this.#usePkce) {
-      this.#log.info('Using PKCE');
+      this.#log.info('PKCE is enabled. Sending code_verifier.');
       body.code_verifier = localStorage.getItem('code-verifier');
     }
 
@@ -209,10 +211,9 @@ class OAuth {
     };
 
     if (this.#useDpop) {
-      const keyPair = await getKeyPair();
-      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, keyPair);
-      this.#log.info('Using DPoP');
-      this.#log.info('DPoP proof JWT', dpopStringify(headers.DPoP));
+      this.#dpopKeyPair = await generateKeyPair();
+      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, this.#dpopKeyPair);
+      this.#log.info('DPoP is enabled. Sending DPoP proof JWT:', dpopStringify(headers.DPoP));
     }
 
     this.#log.info(
@@ -243,10 +244,11 @@ class OAuth {
     };
 
     if (this.#useDpop) {
-      const keyPair = await getKeyPair();
-      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, keyPair);
-      this.#log.info('Using DPoP');
-      this.#log.info('DPoP proof JWT', dpopStringify(headers.DPoP));
+      if (!this.#dpopKeyPair) {
+        throw new Error('Cannot refresh token without DPoP key pair generated during authorization_code grant request');
+      }
+      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, this.#dpopKeyPair);
+      this.#log.info('DPoP is enabled. Sending DPoP proof JWT:', dpopStringify(headers.DPoP));
     }
 
     const body = {
