@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="logger.css" />
+    <title>Streaming</title>
+  </head>
+
+  <body>
+    <h1>Streaming</h1>
+
+    <div class="form-container">
+      <h1>Server-Sent Events (SSE)</h1>
+      <label for="sse-url">URL:</label>
+      <input type="text" id="sse-url" value="/sse" />
+
+      <label for="sse-method">Request:</label>
+      <fieldset id="sse-method">
+        <button id="sse-connect">Connect</button>
+        <button id="sse-disconnect">Disconnect</button>
+      </fieldset>
+
+      <h1>WebSocket</h1>
+      <label for="ws-url">URL:</label>
+      <input type="text" id="ws-url" value="/websocket" />
+
+      <label for="ws-method">Request:</label>
+      <fieldset>
+        <button id="ws-connect">Connect</button>
+        <button id="ws-disconnect">Disconnect</button>
+      </fieldset>
+
+      <button id="clear-log" class="warn">clear logs</button>
+    </div>
+
+    <div>
+      <h3>Logs</h3>
+      <div id="logs"></div>
+    </div>
+
+    <script type="module">
+      import { Logger } from './logger.js';
+
+      // Update full URL to path input field.
+      const origin = new URL(window.location.href);
+      const url = document.getElementById('ws-url');
+      url.value = `ws://${origin.host}${url.value}`;
+
+      const log = new Logger(document.getElementById('logs'));
+
+      let socket;
+      let eventSource;
+
+      // Receive messages from the server using Server-Sent Events (SSE)
+      async function sseConnect() {
+        const url = document.getElementById('sse-url').value;
+
+        try {
+          eventSource = new EventSource(url);
+          log.info(`Connecting to ${url} using EventSource SSE API...`);
+          eventSource.addEventListener('open', () => {
+            log.info(`Connected to ${url}`);
+          });
+          eventSource.addEventListener('message', (event) => {
+            log.info('Received:', event.data);
+          });
+          eventSource.addEventListener('close', () => {
+            log.info(`Connection to ${url} closed`);
+          });
+          eventSource.addEventListener('error', (error) => {
+            log.error(`Error: ${error.message}`);
+          });
+        } catch (error) {
+          log.error(error);
+        }
+      }
+
+      async function webSocketConnect() {
+        const url = document.getElementById('ws-url').value;
+
+        try {
+          socket = new WebSocket(url);
+          log.info(`Connecting to ${url} using WebSocket...`);
+          socket.addEventListener('open', () => {
+            log.info(`Connected to ${url}`);
+          });
+          socket.addEventListener('message', (event) => {
+            log.info('Received:', event.data);
+          });
+          socket.addEventListener('close', () => {
+            log.info(`Connection to ${url} closed`);
+          });
+          socket.addEventListener('error', (error) => {
+            log.error(`Error: ${error.message}`);
+          });
+        } catch (error) {
+          log.error(error);
+        }
+      }
+
+      document.getElementById('clear-log').addEventListener('click', () => log.clear());
+
+      document.getElementById('sse-connect').addEventListener('click', () => sseConnect());
+      document.getElementById('sse-disconnect').addEventListener('click', () => {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+          log.info('Closed SSE connection');
+        } else {
+          log.info('No active SSE connection to disconnect.');
+        }
+      });
+
+      document.getElementById('ws-connect').addEventListener('click', () => webSocketConnect());
+      document.getElementById('ws-disconnect').addEventListener('click', () => {
+        if (socket) {
+          socket.close();
+          socket = null;
+          log.info('Closed WebSocket connection');
+        } else {
+          log.info('No active WebSocket connection to disconnect.');
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -20,7 +20,7 @@ class Logger {
 
   #log(level, message, payload = null) {
     const date = new Date();
-    const timestamp = date.toLocaleTimeString() + '.' + date.getMilliseconds().toString().padStart(3, '0');
+    const timestamp = date.toLocaleTimeString('en-GB', { hour12: false }) + '.' + date.getMilliseconds().toString().padStart(3, '0');
 
     const timestampSpan = document.createElement('span');
     timestampSpan.className = 'time';

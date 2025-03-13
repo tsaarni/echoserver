@@ -43,6 +43,9 @@ key files without restarting the server.
 
 ### API
 
+
+Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
+
 #### <code>/*</code> - Returns request details in JSON format.
 <details>
 
@@ -209,6 +212,10 @@ Set-Cookie: hello=world
 
 Server will respond with `Content-Type: text/event-stream` with the following content:
 
+```sh
+$ http http://localhost:8080/sse
+```
+
 ```http
 HTTP/1.1 200 OK
 Cache-Control: no-cache
@@ -224,6 +231,8 @@ data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 ```
 </details>
 
+#### <code>/websocket</code> - WebSocket endpoint that sends a text frame every second.
+
 #### <code>/apps/</code> - Returns a list of available applications.
 
 #### <code>/apps/fetch.html</code> - Interactive HTTP request tool.
@@ -235,7 +244,7 @@ data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 A JavaScript application that enables users to make HTTP requests towards the
 echoserver using different methods and view the responses.
 
-![image](https://github.com/user-attachments/assets/1c325a58-2829-4549-8f70-d411b562190c)
+![Image](https://github.com/user-attachments/assets/8dff4db9-fd9a-4b1c-86ac-e3be15d107cf)
 
 </details>
 
@@ -248,7 +257,7 @@ echoserver using different methods and view the responses.
 An HTML form that enables data submission using both `POST` and `GET` methods
 towards the echoserver.
 
-![image](https://github.com/user-attachments/assets/46d5deb3-e9f5-4f34-a114-3d9ab0219e0b)
+![Image](https://github.com/user-attachments/assets/0876d4fb-c9cf-4313-9a4a-d3ca40ecd378)
 
 </details>
 
@@ -262,7 +271,8 @@ OAuth2-aware JavaScript application that implements the Authorization Code flow.
 It allows users to interactively trigger login/refresh/logout and to make
 authenticated requests towards the echoserver and view the responses.
 
-![image](https://github.com/user-attachments/assets/31f5da4b-e064-4ce4-89e8-9d28a7230716)
+![Image](https://github.com/user-attachments/assets/9d9f10d6-d110-4f11-b262-8018fbbdfc09)
+
 
 </details>
 
@@ -272,16 +282,24 @@ authenticated requests towards the echoserver and view the responses.
 
 ##### Description
 
-OAuth2-aware JavaScript application that uses the
-[Keycloak-js](https://www.keycloak.org/securing-apps/javascript-adapter)
-JavaScript adapter to authenticate users. It allows users to interactively
-trigger login/refresh/logout and to make authenticated requests towards the
-echoserver and view the responses.
+A JavaScript application that uses the [Keycloak-js](https://www.keycloak.org/securing-apps/javascript-adapter) JavaScript adapter to authenticate users.
+
+![Image](https://github.com/user-attachments/assets/51f8c81c-dc27-46fb-9801-4966e3c88dce)
 
 </details>
 
-Example commands in the descriptions are given using the
-[HTTPie](https://httpie.io/) tool.
+#### <code>/apps/streaming.html</code> - Streaming client.
+
+<details>
+
+##### Description
+
+A JavaScript application that makes Server-Sent Events (SSE) or WebSocket connection towards the echoserver and displays the responses.
+
+![Image](https://github.com/user-attachments/assets/e3555203-7994-46bd-879c-41a6094fc64f)
+
+</details>
+
 
 ## Development
 

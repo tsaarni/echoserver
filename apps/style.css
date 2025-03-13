@@ -39,6 +39,11 @@ body {
   margin-bottom: 1em;
 }
 
+.form-container h1 {
+  font-size: 1em;
+  grid-column: 1 / -1;
+}
+
 .form-container label {
   padding-top: 0.5em;
   grid-column: labels;

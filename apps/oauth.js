@@ -43,7 +43,7 @@ class OAuth {
   }
 
   useRedirectUri(redirectUri) {
-    this.#redirectUri = redirectUri
+    this.#redirectUri = redirectUri;
     return this;
   }
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha1" //nolint:gosec
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -33,6 +34,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.templateHandler(w, r)
 	case r.URL.Path == "/sse":
 		h.serverSentEventHandler(w, r)
+	case r.URL.Path == "/websocket":
+		h.webSocketHandler(w, r)
 	default:
 		h.echoHandler(w, r)
 	}
@@ -313,6 +316,7 @@ func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
+	// Write message to the client once every second.
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
 
@@ -330,13 +334,115 @@ func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request)
 				slog.Error("Error writing to stream", "error", err)
 				return
 			}
+			w.(http.Flusher).Flush()
+			slog.Info("Sent message to client", "counter", counter)
 
-			if f, ok := w.(http.Flusher); ok {
-				f.Flush()
-			}
 		case <-ctx.Done():
 			slog.Info("Client disconnected")
 			return
 		}
 	}
+}
+
+func (h *Handler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handling websocket request", "url", r.URL.String())
+
+	if r.Header.Get("Upgrade") != "websocket" {
+		slog.Warn("Invalid upgrade request")
+		http.Error(w, "Invalid upgrade request", http.StatusBadRequest)
+		return
+	}
+
+	if r.Header.Get("Connection") != "Upgrade" {
+		slog.Warn("Invalid connection header")
+		http.Error(w, "Invalid connection header", http.StatusBadRequest)
+		return
+	}
+
+	if r.Header.Get("Sec-WebSocket-Version") != "13" {
+		slog.Warn("Invalid websocket version")
+		http.Error(w, "Invalid websocket version", http.StatusBadRequest)
+		return
+	}
+
+	if r.Header.Get("Sec-WebSocket-Key") == "" {
+		slog.Warn("Missing websocket key")
+		http.Error(w, "Missing websocket key", http.StatusBadRequest)
+		return
+	}
+
+	w.Header().Set("Upgrade", "websocket")
+	w.Header().Set("Connection", "Upgrade")
+	w.Header().Set("Sec-WebSocket-Accept", calculateWebSocketAcceptKey(r.Header.Get("Sec-WebSocket-Key")))
+	w.WriteHeader(http.StatusSwitchingProtocols)
+
+	ctx := r.Context()
+
+	// Get the socket from the response writer.
+	conn, buf, err := w.(http.Hijacker).Hijack()
+	if err != nil {
+		slog.Error("Failed to hijack connection", "error", err)
+		http.Error(w, "Failed to hijack connection", http.StatusInternalServerError)
+		return
+	}
+	defer conn.Close()
+
+	slog.Info("WebSocket connection established")
+
+	// Channel to signal client disconnection.
+	disconnected := make(chan bool)
+
+	// Detect client disconnection by (dummy) reading from the connection.
+	go func() {
+		defer close(disconnected)
+		for {
+			one := make([]byte, 1)
+			_, err := conn.Read(one)
+			if err == io.EOF {
+				return
+			}
+		}
+	}()
+
+	// Write message to the client once every second.
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	counter := 0
+
+	for {
+		select {
+		case <-ticker.C:
+			timestamp := time.Now().Format(time.RFC3339)
+			counter++
+			payload := fmt.Sprintf("{ \"timestamp\": \"%s\", \"counter\": \"%d\" }", timestamp, counter)
+			payloadLen := len(payload)
+
+			frame := make([]byte, payloadLen+2)
+			frame[0] = 0x81             // Text frame.
+			frame[1] = byte(payloadLen) // Payload length.
+			copy(frame[2:], payload)    // Payload data.
+
+			_, err := buf.Write(frame)
+			if err != nil {
+				slog.Error("Error writing to websocket", "error", err)
+				return
+			}
+			buf.Flush()
+			slog.Info("Sent message to client", "counter", counter)
+
+		case <-ctx.Done():
+		case <-disconnected:
+			slog.Info("Client disconnected")
+			return
+		}
+	}
+}
+
+func calculateWebSocketAcceptKey(key string) string {
+	// https://datatracker.ietf.org/doc/html/rfc6455#section-1.3
+	buf := key + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+	hash := sha1.New() //nolint:gosec
+	hash.Write([]byte(buf))
+	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
