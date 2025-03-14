@@ -1,4 +1,4 @@
-import { generateKeyPair, generateDpopProof, dpopStringify } from './oauthdpop.js';
+import { OAuthDPop, dpopStringify } from './oauthdpop.js';
 import { generateCodeVerifier, generateCodeChallenge } from './oauthpkce.js';
 
 /**
@@ -24,9 +24,9 @@ class OAuth {
   #accessToken;
   #refreshToken;
 
-  // DPoP key pair for DPoP proof.
-  // Generated during authorization_code grant request and used during refresh token request and resource request.
-  #dpopKeyPair;
+  // Helper for generating DPoP proof.
+  // Instantiated during authorization_code grant request and used during refresh token request and resource request.
+  #dpop;
 
   constructor(logger) {
     this.#log = logger;
@@ -58,16 +58,34 @@ class OAuth {
   }
 
   /**
-   * Getter for access token.
-   * @returns {string} Authorization header
-   * @throws {Error} If the access token has not been fetched.
+   * Set the request headers for authorization.
+   *
+   * @param {Object} request The request object to set the authorization header on.
+   * @param {string} url The URL of the request.
+   * @throws {Error} If the access token has not been fetched or if DPoP was enabled after the authorization code grant request.
    */
-  getAuthorizationHeader() {
+  async setAuthorizationForRequest(request, url) {
     if (!this.#accessToken) {
       throw new Error('Access token not available');
     }
-    // If DPoP is enabled, use DPoP header, otherwise use Bearer header.
-    return this.#useDpop ? `DPoP ${this.#accessToken}` : `Bearer ${this.#accessToken}`;
+
+    if (this.#useDpop) {
+      if (!this.#dpop) {
+        throw new Error('Cannot set authorization header without DPoP key pair generated during authorization_code grant request');
+      }
+
+      request.headers.Authorization = `DPoP ${this.#accessToken}`;
+
+      // Strip query and fragment from the URL.
+      const urlObj = new URL(url);
+      urlObj.search = '';
+      urlObj.hash = '';
+      request.headers.DPoP = await this.#dpop.generateProof(request.method, urlObj.toString());
+      this.#log.info('DPoP is enabled. Sending DPoP proof JWT:', dpopStringify(request.headers.DPoP));
+    } else {
+      // DPoP is not enabled, so just send the access token as a Bearer token.
+      request.headers.Authorization = `Bearer ${this.#accessToken}`;
+    }
   }
 
 
@@ -131,7 +149,7 @@ class OAuth {
     }
     this.#accessToken = undefined;
     this.#refreshToken = undefined;
-    this.#dpopKeyPair = undefined;
+    this.#dpop = undefined;
   }
 
   /**
@@ -211,8 +229,8 @@ class OAuth {
     };
 
     if (this.#useDpop) {
-      this.#dpopKeyPair = await generateKeyPair();
-      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, this.#dpopKeyPair);
+      this.#dpop = new OAuthDPop();
+      headers.DPoP = await this.#dpop.generateProof('POST', this.#tokenEndpoint);
       this.#log.info('DPoP is enabled. Sending DPoP proof JWT:', dpopStringify(headers.DPoP));
     }
 
@@ -244,10 +262,10 @@ class OAuth {
     };
 
     if (this.#useDpop) {
-      if (!this.#dpopKeyPair) {
+      if (!this.#dpop) {
         throw new Error('Cannot refresh token without DPoP key pair generated during authorization_code grant request');
       }
-      headers.DPoP = await generateDpopProof('POST', this.#tokenEndpoint, this.#dpopKeyPair);
+      headers.DPoP = await this.#dpop.generateProof('POST', this.#tokenEndpoint);
       this.#log.info('DPoP is enabled. Sending DPoP proof JWT:', dpopStringify(headers.DPoP));
     }
 

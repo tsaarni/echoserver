@@ -1,40 +1,50 @@
-async function generateKeyPair() {
-  return await crypto.subtle.generateKey(
-    {
-      name: 'ECDSA',
-      namedCurve: 'P-256',
-    },
-    false, // non-exportable
-    ['sign', 'verify']
-  );
+class OAuthDPop {
+
+  #keyPair;
+
+  async generateProof(httpMethod, httpUrl) {
+    if (!this.#keyPair) {
+      this.#keyPair = await newKeyPair();
+    }
+    const publicKeyJwk = await crypto.subtle.exportKey('jwk', this.#keyPair.publicKey);
+    const jwtHeader = {
+      alg: 'ES256',
+      typ: 'dpop+jwt',
+      jwk: publicKeyJwk,
+    };
+
+    const jwtPayload = {
+      jti: crypto.randomUUID(),
+      htm: httpMethod,
+      htu: httpUrl,
+      iat: Math.floor(Date.now() / 1000),
+    };
+
+    const jwtHeaderBase64 = base64URLEncode(JSON.stringify(jwtHeader));
+    const jwtPayloadBase64 = base64URLEncode(JSON.stringify(jwtPayload));
+    const jwtUnsigned = `${jwtHeaderBase64}.${jwtPayloadBase64}`;
+
+    const signature = await crypto.subtle.sign(
+      { name: 'ECDSA', hash: { name: 'SHA-256' } },
+      this.#keyPair.privateKey,
+      new TextEncoder().encode(jwtUnsigned)
+    );
+
+    const jwtSignatureBase64 = base64URLEncode(signature);
+    return `${jwtUnsigned}.${jwtSignatureBase64}`;
+  }
+
 }
-async function generateDpopProof(httpMethod, httpUrl, keyPair) {
-  const publicKeyJwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
-  const jwtHeader = {
-    alg: 'ES256',
-    typ: 'dpop+jwt',
-    jwk: publicKeyJwk,
-  };
 
-  const jwtPayload = {
-    jti: crypto.randomUUID(),
-    htm: httpMethod,
-    htu: httpUrl,
-    iat: Math.floor(Date.now() / 1000),
-  };
-
-  const jwtHeaderBase64 = base64URLEncode(JSON.stringify(jwtHeader));
-  const jwtPayloadBase64 = base64URLEncode(JSON.stringify(jwtPayload));
-  const jwtUnsigned = `${jwtHeaderBase64}.${jwtPayloadBase64}`;
-
-  const signature = await crypto.subtle.sign(
-    { name: 'ECDSA', hash: { name: 'SHA-256' } },
-    keyPair.privateKey,
-    new TextEncoder().encode(jwtUnsigned)
-  );
-
-  const jwtSignatureBase64 = base64URLEncode(signature);
-  return `${jwtUnsigned}.${jwtSignatureBase64}`;
+async function newKeyPair() {
+  return await crypto.subtle.generateKey(
+   {
+     name: 'ECDSA',
+     namedCurve: 'P-256',
+   },
+   false, // non-exportable
+   ['sign', 'verify']
+ );
 }
 
 function dpopStringify(dpop) {
@@ -57,4 +67,4 @@ function base64URLEncode(input) {
     .replace(/=+$/, '');
 }
 
-export { generateKeyPair, generateDpopProof, dpopStringify };
+export { OAuthDPop, dpopStringify };

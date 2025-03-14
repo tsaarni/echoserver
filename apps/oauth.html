@@ -36,7 +36,7 @@
       </fieldset>
 
       <label for="requestUrl">Path:</label>
-      <input type="text" id="requestUrl" value="/protected" />
+      <input type="text" id="requestUrl" />
       <label for="requestBody">Body:</label>
       <textarea id="requestBody" rows="4">{ "message": "hello" }</textarea>
       <label for="request">Request:</label>
@@ -63,6 +63,7 @@
 
       const log = new Logger(document.getElementById('logs'));
 
+
       // Get the client configuration from the local storage or use the default values.
       const clientValues = new PersistentValues('oauth-client-params')
         .addElement(document.getElementById('client-id'), 'echoserver-public')
@@ -74,6 +75,11 @@
         .addElement(document.getElementById('enable-dpop'), true)
         .addElement(document.getElementById('logout-with-redirect'), false);
       clientValues.bind();
+
+      // Update request URL with default value, including the current origin to make it full URL.
+      const url = document.getElementById('requestUrl');
+      const origin = new URL(window.location.href);
+      url.value = `${origin.protocol}//${origin.host}/protected`;
 
       const oauthClient = new OAuth(log);
       oauthClient
@@ -94,10 +100,10 @@
             headers: {
               'Content-Type': 'application/json',
               'Accept': 'application/json',
-              Authorization: oauthClient.getAuthorizationHeader(),
             },
             body: method === 'GET' ? undefined : JSON.stringify(body),
           };
+          await oauthClient.setAuthorizationForRequest(request, url);
           log.info(`Request ${method} to ${url}`, request.headers);
 
           const response = await fetch(url, request);

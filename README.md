@@ -341,6 +341,17 @@ Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/
 and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/. Envoy will
 validate JWT for endpoints matching with
 https://echoserver.127.0.0.1.nip.io/protected.
+
+> ⚠️ NOTE ⚠️ You will get an error for first login, because the certificate is self-signed.
+To fix this, visit [Keycloak admin console](https://keycloak.127.0.0.1.nip.io/) once and accept the certificate.
+
 The admin console credentials are `admin:admin`, and the user credentials in `echoserver` realm are `joe:joe` and `jane:jane`.
+
+Keycloak has been configured with the following clients:
+
+- echoserver-public
+- echoserver-public-dpop
+
+The latter one is configured to require [DPoP](https://datatracker.ietf.org/doc/html/rfc9449).
 
 [1]: https://wiki.wireshark.org/TLS#tls-decryption
