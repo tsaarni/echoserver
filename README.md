@@ -35,14 +35,13 @@ Following table lists the available configuration options:
 | `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file.                                                                                          |         |
 | `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file.                                                                                                  |         |
 |                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates. |         |
-| `-live`          |                 | Serve static files directly from the `./apps` dorectory instead of using bundled files in the binary.                  | `false` |
-|                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for mor information.                 |         |
+| `-live`          |                 | Serve static files directly from the `./apps` directory instead of using bundled files in the binary.                  | `false` |
+|                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for more information.                |         |
 
 The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and
 key files without restarting the server.
 
 ### API
-
 
 Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
 
@@ -78,7 +77,7 @@ Following fields is included in the response:
 - `jwt`: JWT claims if the request had JWT in the `Authorization` header.
   - `header`: JWT header.
   - `claims`: JWT claims.
-    - If the `claims` field contains `iat` or `exp` claims, they are converted to human-readable format in the `iat_date` and `exp_date` fields.
+    - If the `claims` field contains `iat` or `exp` claims, they are converted to human-readable format and added as `iat_date` and `exp_date` fields (these fields are added by the server and are not part of the original token).
 - `basic_auth`: Basic authentication credentials if the request had `Authorization` header with `Basic` scheme.
   - `username`: Username.
   - `password`: Password.

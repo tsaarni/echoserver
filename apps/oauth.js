@@ -179,14 +179,10 @@ class OAuth {
     const params = new URLSearchParams(fragment);
     const code = params.get('code');
     if (code) {
-      try {
-        const response = await this.#fetchTokenWithAuthorizationCode(code);
-        this.#accessToken = response.access_token;
-        this.#refreshToken = response.refresh_token;
-        return response;
-      } catch (error) {
-        throw new Error(error.message);
-      }
+      const response = await this.#fetchTokenWithAuthorizationCode(code);
+      this.#accessToken = response.access_token;
+      this.#refreshToken = response.refresh_token;
+      return response;
     }
     this.#log.info('No authorization code found in the URL');
     return null;

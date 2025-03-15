@@ -72,7 +72,7 @@
           'https://keycloak.127.0.0.1.nip.io/realms/echoserver/.well-known/openid-configuration'
         )
         .addElement(document.getElementById('enable-pkce'), true)
-        .addElement(document.getElementById('enable-dpop'), true)
+        .addElement(document.getElementById('enable-dpop'), false)
         .addElement(document.getElementById('logout-with-redirect'), false);
       clientValues.bind();
 
@@ -114,6 +114,7 @@
           }
         } catch (error) {
           log.error(error);
+          throw error;
         }
       }
       document.getElementById('fetch-get').addEventListener('click', () => fetchResource('GET'));
@@ -144,6 +145,7 @@
           log.info('Refresh token', tokenStringify(response.refresh_token));
         } catch (error) {
           log.error(error);
+          throw error;
         }
       });
 
@@ -158,6 +160,7 @@
           }
         } catch (error) {
           log.error('Logout failed', error);
+          throw error;
         }
       });
 
@@ -173,6 +176,7 @@
         }
       } catch (error) {
         log.error(`IDP not reachable? Please reload the application again: ${error.message}`);
+        throw error;
       }
     </script>
   </body>
