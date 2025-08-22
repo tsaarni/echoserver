@@ -24,6 +24,7 @@ services:
 
   envoy:
     image: envoyproxy/envoy:v1.31-latest
+#    image: envoyproxy/envoy:dev
     command: --log-level info --config-path /input/testdata/envoy/envoy-config.yaml
     ports:
       - '127.0.0.1:443:8080'
@@ -32,4 +33,4 @@ services:
       - '.:/input:ro'
       - '/tmp/:/tmp/'
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway" # Needed for linux.
