@@ -36,6 +36,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.serverSentEventHandler(w, r)
 	case r.URL.Path == "/websocket":
 		h.webSocketHandler(w, r)
+	case r.URL.Path == "/download":
+		h.downloadHandler(w, r)
+	case r.URL.Path == "/upload":
+		h.uploadHandler(w, r)
 	default:
 		h.echoHandler(w, r)
 	}
@@ -445,4 +449,61 @@ func calculateWebSocketAcceptKey(key string) string {
 	hash := sha1.New() //nolint:gosec
 	hash.Write([]byte(buf))
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
+}
+
+func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	downloadBytes := 1024 * 1024 // Default file size of 1MB unless overridden by query parameter.
+
+	if size := r.URL.Query().Get("bytes"); size != "" {
+		if parsedSize, err := strconv.Atoi(size); err == nil {
+			downloadBytes = parsedSize
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Length", strconv.Itoa(downloadBytes))
+
+	slog.Info("Handling download request", "url", r.URL.String(), "bytes", downloadBytes)
+
+	for i := 0; i < downloadBytes; i++ {
+		_, err := w.Write([]byte{byte(i % 256)})
+		if err != nil {
+			slog.Error("Error writing download data", "error", err)
+			return
+		}
+	}
+
+	slog.Info("File download completed")
+}
+
+func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
+	slog.Info("Handling upload request", "url", r.URL.String())
+
+	var bytesRead int64
+	var err error
+
+	bytesRead, err = io.Copy(io.Discard, r.Body)
+	if err != nil {
+		slog.Error("Error reading upload data", "error", err)
+		http.Error(w, "Error reading upload data", http.StatusInternalServerError)
+		return
+	}
+
+	resp := map[string]any{
+		"bytes_uploaded": bytesRead,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	jsonResp, err := json.Marshal(resp)
+	if err != nil {
+		slog.Error("Error marshaling JSON", "error", err)
+		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
+		return
+	}
+	_, _ = w.Write(jsonResp)
 }

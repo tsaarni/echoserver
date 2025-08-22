@@ -232,6 +232,101 @@ data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 
 #### <code>/websocket</code> - WebSocket endpoint that sends a text frame every second.
 
+
+#### <code>/upload</code> - File upload.
+
+<details>
+
+##### Description
+
+Accepts POST requests with bodies of any size.
+Responds with the total number of bytes received, rather than request details.
+
+##### Responses
+
+| Status | Description                 |
+| ------ | --------------------------- |
+| 200 OK | Uploaded bytes JSON format. |
+
+Following fields is included in the response:
+
+- `bytes_uploaded`: Length of the request body.
+
+##### Example
+
+```sh
+$ dd if=/dev/zero bs=10M count=1 | http POST http://localhost:8080/upload
+```
+
+```http
+HTTP/1.1 200 OK
+content-length: 26
+content-type: application/json
+date: Thu, 21 Aug 2025 12:27:06 GMT
+server: envoy
+x-envoy-upstream-service-time: 0
+
+{
+    "bytes_uploaded": 1048576
+}
+```
+
+
+</details>
+
+
+
+#### <code>/download</code> - File download.
+
+<details>
+
+##### Description
+
+Accepts GET requests and responds with a binary stream of bytes.
+The number of bytes can be specified with the `bytes` query parameter.
+The default size for the download is 1MB.
+The response body consists of a sequence of bytes from 1 to 256.
+
+##### Parameters
+
+| Name  | Description                                | Default |
+|-------|--------------------------------------------|---------|
+| bytes | Number of bytes to download (integer)      | 1048576 |
+
+##### Responses
+
+| Status | Description                |
+|--------|----------------------------|
+| 200 OK | File download in progress. |
+
+
+##### Example
+
+Download the default 1MB file:
+
+```sh
+$ http --download http://localhost:8080/download --output download.bin
+```
+
+Response headers:
+
+```http
+HTTP/1.1 200 OK
+content-length: 1048576
+content-type: application/octet-stream
+date: Thu, 21 Aug 2025 16:37:15 GMT
+server: envoy
+x-envoy-upstream-service-time: 0
+```
+
+Download a 10-byte file:
+
+```sh
+$ http --download http://localhost:8080/download?bytes=10 --output download.bin
+```
+
+</details>
+
 #### <code>/apps/</code> - Returns a list of available applications.
 
 #### <code>/apps/fetch.html</code> - Interactive HTTP request tool.
@@ -300,6 +395,7 @@ A JavaScript application that makes Server-Sent Events (SSE) or WebSocket connec
 </details>
 
 
+
 ## Development
 
 To build and run the echoserver locally, use the following commands:
@@ -341,8 +437,14 @@ and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/. Envoy will
 validate JWT for endpoints matching with
 https://echoserver.127.0.0.1.nip.io/protected.
 
-> ⚠️ NOTE ⚠️ You will get an error for first login, because the certificate is self-signed.
+> ⚠️ NOTE ⚠️
+>
+> You will get an error for first login, because the certificate is self-signed.
 To fix this, visit [Keycloak admin console](https://keycloak.127.0.0.1.nip.io/) once and accept the certificate.
+>
+> If running on Linux with firewall like UFW, traffic from docker bridge network to host network may be blocked.
+> For UFW use `sudo ufw allow from 172.0.0.0/8`to allow traffic.
+
 
 The admin console credentials are `admin:admin`, and the user credentials in `echoserver` realm are `joe:joe` and `jane:jane`.
 
