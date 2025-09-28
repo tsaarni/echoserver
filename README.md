@@ -46,6 +46,7 @@ key files without restarting the server.
 Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
 
 #### <code>/*</code> - Returns request details in JSON format.
+
 <details>
 
 ##### Responses
@@ -118,6 +119,7 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
     "url": "/foobar"
 }
 ```
+
 </details>
 
 #### <code>/status</code> - Returns a `200 OK` status, indicating the server is operational.
@@ -145,7 +147,9 @@ Date: Fri, 29 Nov 2024 06:24:46 GMT
 </details>
 
 #### <code>/status/{code}</code>
+
 Returns the specified HTTP status code.
+
 <details>
 
 ##### Parameters
@@ -195,7 +199,6 @@ Set-Cookie: hello=world
 
 </details>
 
-
 #### <code>/sse</code> - Server-Sent Events (SSE) endpoint that sends a message every second.
 
 <details>
@@ -205,7 +208,6 @@ Set-Cookie: hello=world
 | Status | Description            |
 | ------ | ---------------------- |
 | 200 OK | Server is operational. |
-
 
 ##### Example
 
@@ -228,10 +230,10 @@ data: { "counter": "1", "timestamp": "2025-02-19T12:10:15+02:00" }
 data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 ...
 ```
+
 </details>
 
 #### <code>/websocket</code> - WebSocket endpoint that sends a text frame every second.
-
 
 #### <code>/upload</code> - File upload.
 
@@ -241,6 +243,12 @@ data: { "counter": "2", "timestamp": "2025-02-19T12:10:16+02:00" }
 
 Accepts POST requests with bodies of any size.
 Responds with the total number of bytes received, rather than request details.
+
+##### Parameters
+
+| Name     | Description                                                                         | Default |
+| -------- | ----------------------------------------------------------------------------------- | ------- |
+| throttle | Throttle the upload speed to bytes/sec (integer with optional suffix "K", "M", "G") |         |
 
 ##### Responses
 
@@ -271,10 +279,13 @@ x-envoy-upstream-service-time: 0
 }
 ```
 
+To upload a file, while throttling the upload speed to 1MB/s at the server side:
+
+```sh
+$ dd if=/dev/zero bs=10M count=1 | http http://localhost:8080/upload?throttle=1M
+```
 
 </details>
-
-
 
 #### <code>/download</code> - File download.
 
@@ -289,16 +300,16 @@ The response body consists of a sequence of bytes from 1 to 256.
 
 ##### Parameters
 
-| Name  | Description                                | Default |
-|-------|--------------------------------------------|---------|
-| bytes | Number of bytes to download (integer)      | 1048576 |
+| Name     | Description                                                                           | Default |
+| -------- | ------------------------------------------------------------------------------------- | ------- |
+| bytes    | Number of bytes to download (integer)                                                 | 1048576 |
+| throttle | Throttle the download speed to bytes/sec (integer with optional suffix "K", "M", "G") |         |
 
 ##### Responses
 
 | Status | Description                |
-|--------|----------------------------|
+| ------ | -------------------------- |
 | 200 OK | File download in progress. |
-
 
 ##### Example
 
@@ -323,6 +334,12 @@ Download a 10-byte file:
 
 ```sh
 $ http --download http://localhost:8080/download?bytes=10 --output download.bin
+```
+
+Download a 10MB file while throttling the upload speed to 1MB/s at the server side:
+
+```sh
+$ http --download http://localhost:8080/download?bytes=10M\&throttle=1M --output download.bin
 ```
 
 </details>
@@ -367,7 +384,6 @@ authenticated requests towards the echoserver and view the responses.
 
 ![Image](https://github.com/user-attachments/assets/9d9f10d6-d110-4f11-b262-8018fbbdfc09)
 
-
 </details>
 
 #### <code>/apps/keycloak.html</code> - Interactive client using keycloak-js adapter.
@@ -393,8 +409,6 @@ A JavaScript application that makes Server-Sent Events (SSE) or WebSocket connec
 ![Image](https://github.com/user-attachments/assets/e3555203-7994-46bd-879c-41a6094fc64f)
 
 </details>
-
-
 
 ## Development
 
@@ -440,11 +454,10 @@ https://echoserver.127.0.0.1.nip.io/protected.
 > ⚠️ NOTE ⚠️
 >
 > You will get an error for first login, because the certificate is self-signed.
-To fix this, visit [Keycloak admin console](https://keycloak.127.0.0.1.nip.io/) once and accept the certificate.
+> To fix this, visit [Keycloak admin console](https://keycloak.127.0.0.1.nip.io/) once and accept the certificate.
 >
 > If running on Linux with firewall like UFW, traffic from docker bridge network to host network may be blocked.
 > For UFW use `sudo ufw allow from 172.0.0.0/8`to allow traffic.
-
 
 The admin console credentials are `admin:admin`, and the user credentials in `echoserver` realm are `joe:joe` and `jane:jane`.
 
