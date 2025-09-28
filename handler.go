@@ -21,6 +21,17 @@ import (
 	"time"
 )
 
+// patternByteReader implements io.Reader, returning a repeating pattern of bytes 0..255.
+type patternByteReader struct{ pos int }
+
+func (r *patternByteReader) Read(p []byte) (int, error) {
+	for i := range p {
+		p[i] = byte(r.pos % 256)
+		r.pos++
+	}
+	return len(p), nil
+}
+
 type Handler struct {
 	files      fs.FS
 	envContext map[string]string
@@ -457,25 +468,31 @@ func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	downloadBytes := 1024 * 1024 // Default file size of 1MB unless overridden by query parameter.
-
+	downloadBytes := int64(1024 * 1024) // Default file size of 1MB unless overridden by query parameter.
 	if size := r.URL.Query().Get("bytes"); size != "" {
-		if parsedSize, err := strconv.Atoi(size); err == nil {
+		parsedSize, err := parseUnit(size)
+		if err == nil {
 			downloadBytes = parsedSize
 		}
 	}
 
+	throttleStr := r.URL.Query().Get("throttle")
+	throttle, err := parseUnit(throttleStr)
+	if err != nil {
+		http.Error(w, "Invalid throttle parameter", http.StatusBadRequest)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/octet-stream")
-	w.Header().Set("Content-Length", strconv.Itoa(downloadBytes))
+	w.Header().Set("Content-Length", strconv.FormatInt(downloadBytes, 10))
 
-	slog.Info("Handling download request", "url", r.URL.String(), "bytes", downloadBytes)
+	slog.Info("Handling download request", "url", r.URL.String(), "bytes", downloadBytes, "throttle", throttle)
 
-	for i := 0; i < downloadBytes; i++ {
-		_, err := w.Write([]byte{byte(i % 256)})
-		if err != nil {
-			slog.Error("Error writing download data", "error", err)
-			return
-		}
+	patternReader := io.LimitReader(&patternByteReader{}, downloadBytes)
+	_, err = throttledCopy(w, patternReader, downloadBytes, throttle)
+	if err != nil {
+		slog.Error("Error writing download data", "error", err)
+		return
 	}
 
 	slog.Info("File download completed")
@@ -484,10 +501,14 @@ func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Info("Handling upload request", "url", r.URL.String())
 
-	var bytesRead int64
-	var err error
+	throttleStr := r.URL.Query().Get("throttle")
+	throttle, err := parseUnit(throttleStr)
+	if err != nil {
+		http.Error(w, "Invalid throttle parameter", http.StatusBadRequest)
+		return
+	}
 
-	bytesRead, err = io.Copy(io.Discard, r.Body)
+	bytesRead, err := throttledCopy(io.Discard, r.Body, 0, throttle)
 	if err != nil {
 		slog.Error("Error reading upload data", "error", err)
 		http.Error(w, "Error reading upload data", http.StatusInternalServerError)
@@ -506,4 +527,64 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, _ = w.Write(jsonResp)
+}
+
+// parseUnit parses query parameter supporting optional k/m/g suffixes.
+func parseUnit(s string) (int64, error) {
+	s = strings.TrimSpace(strings.ToLower(s))
+	if s == "" {
+		return 0, nil
+	}
+	multiplier := int64(1)
+	if strings.HasSuffix(s, "k") {
+		multiplier = 1024
+		s = strings.TrimSuffix(s, "k")
+	} else if strings.HasSuffix(s, "m") {
+		multiplier = 1024 * 1024
+		s = strings.TrimSuffix(s, "m")
+	} else if strings.HasSuffix(s, "g") {
+		multiplier = 1024 * 1024 * 1024
+		s = strings.TrimSuffix(s, "g")
+	}
+	val, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		return 0, err
+	}
+	return val * multiplier, nil
+}
+
+// throttledCopy copies data from src to dst, limiting the rate to throttle bytes/sec if throttle > 0.
+func throttledCopy(dst io.Writer, src io.Reader, total int64, throttle int64) (written int64, err error) {
+	const chunkSize = 4096
+	buf := make([]byte, chunkSize)
+	var copied int64
+	start := time.Now()
+	for total == 0 || copied < total {
+		toRead := chunkSize
+		if total > 0 && total-copied < int64(chunkSize) {
+			toRead = int(total - copied)
+		}
+		n, readErr := src.Read(buf[:toRead])
+		if n > 0 {
+			wn, writeErr := dst.Write(buf[:n])
+			copied += int64(wn)
+			if writeErr != nil {
+				return copied, writeErr
+			}
+			if throttle > 0 {
+				elapsed := time.Since(start)
+				expected := time.Duration(copied) * time.Second / time.Duration(throttle)
+				if expected > elapsed {
+					time.Sleep(expected - elapsed)
+				}
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return copied, readErr
+		}
+	}
+	return copied, nil
 }
