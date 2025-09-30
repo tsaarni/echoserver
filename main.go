@@ -26,6 +26,7 @@ type Config struct {
 	CertFile   string
 	KeyFile    string
 	KeyLogFile string
+	LogLevel   string
 }
 
 var (
@@ -45,6 +46,7 @@ func newConfig() *Config {
 	httpsAddr := flag.String("https-addr", "", "Address to bind the HTTPS server socket")
 	certFile := flag.String("tls-cert-file", "", "Path to TLS certificate file")
 	keyFile := flag.String("tls-key-file", "", "Path to TLS key file")
+	logLevel := flag.String("log-level", "", "Log level (debug, info, warn, error, none)")
 
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -77,6 +79,28 @@ func newConfig() *Config {
 		CertFile:   getEnv("TLS_CERT_FILE", *certFile, ""),
 		KeyFile:    getEnv("TLS_KEY_FILE", *keyFile, ""),
 		KeyLogFile: os.Getenv("SSLKEYLOGFILE"),
+		LogLevel:   getEnv("LOG_LEVEL", *logLevel, "debug"),
+	}
+}
+
+func parseLogLevel(level *string) slog.Level {
+	if level == nil {
+		return slog.LevelInfo
+	}
+	switch strings.ToLower(*level) {
+	case "debug":
+		return slog.LevelDebug
+	case "info":
+		return slog.LevelInfo
+	case "warn", "warning":
+		return slog.LevelWarn
+	case "error":
+		return slog.LevelError
+	case "none":
+		return slog.Level(999) // Higher than any defined level.
+	default:
+		slog.Warn("Unknown log level, defaulting to info", "log-level", *level)
+		return slog.LevelInfo
 	}
 }
 
@@ -166,6 +190,8 @@ func parseEnvContext() {
 
 func main() {
 	config := newConfig()
+
+	slog.SetLogLoggerLevel(parseLogLevel(&config.LogLevel))
 
 	setupFilesystem(config.Live)
 	parseEnvContext()
