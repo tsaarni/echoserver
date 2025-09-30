@@ -58,7 +58,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // echoHandler gathers information about the incoming request and returns it as a JSON response.
 func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
+	slog.Debug("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
 	info := h.collectRequestInfo(r)
 
 	body, err := io.ReadAll(r.Body)
@@ -129,7 +129,7 @@ func (h *Handler) processRequestBody(r *http.Request, body []byte, info map[stri
 
 // decodeTLSInfo extracts TLS information from the request.
 func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
-	slog.Info("TLS connection", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
+	slog.Debug("TLS connection", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
 	var clientCerts string
 	for _, cert := range r.TLS.PeerCertificates {
 		clientCerts += string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
@@ -246,7 +246,7 @@ func decodeCookies(cookies []*http.Cookie, info map[string]any) {
 // The status code is extracted from the URL path.
 // If not provided, it returns 200 OK.
 func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Handling status request", "url", r.URL.String())
+	slog.Debug("Handling status request", "url", r.URL.String())
 
 	if r.URL.Path == "/status" {
 		w.WriteHeader(http.StatusOK)
@@ -280,7 +280,7 @@ func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query()
 	for key, values := range query {
 		for _, value := range values {
-			slog.Info("Setting header", "key", key, "value", value)
+			slog.Debug("Setting header", "key", key, "value", value)
 			w.Header().Add(key, value)
 		}
 	}
@@ -289,7 +289,7 @@ func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Handling template request", "url", r.URL.String())
+	slog.Debug("Handling template request", "url", r.URL.String())
 
 	relativePath := strings.TrimPrefix(r.URL.Path, "/apps/")
 	if relativePath == "" {
@@ -326,7 +326,7 @@ func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
 
 // serverSentEventHandler implements a long polling server that periodically sends "ping" messages.
 func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Handling stream request", "url", r.URL.String())
+	slog.Debug("Handling stream request", "url", r.URL.String())
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -350,17 +350,17 @@ func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request)
 				return
 			}
 			w.(http.Flusher).Flush()
-			slog.Info("Sent message to client", "counter", counter)
+			slog.Debug("Sent message to client", "counter", counter)
 
 		case <-ctx.Done():
-			slog.Info("Client disconnected")
+			slog.Debug("Client disconnected")
 			return
 		}
 	}
 }
 
 func (h *Handler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Handling websocket request", "url", r.URL.String())
+	slog.Debug("Handling websocket request", "url", r.URL.String())
 
 	if r.Header.Get("Upgrade") != "websocket" {
 		slog.Warn("Invalid upgrade request")
@@ -402,7 +402,7 @@ func (h *Handler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	slog.Info("WebSocket connection established")
+	slog.Debug("WebSocket connection established")
 
 	// Channel to signal client disconnection.
 	disconnected := make(chan bool)
@@ -444,11 +444,11 @@ func (h *Handler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			buf.Flush()
-			slog.Info("Sent message to client", "counter", counter)
+			slog.Debug("Sent message to client", "counter", counter)
 
 		case <-ctx.Done():
 		case <-disconnected:
-			slog.Info("Client disconnected")
+			slog.Debug("Client disconnected")
 			return
 		}
 	}
@@ -486,7 +486,7 @@ func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", strconv.FormatInt(downloadBytes, 10))
 
-	slog.Info("Handling download request", "url", r.URL.String(), "bytes", downloadBytes, "throttle", throttle)
+	slog.Debug("Handling download request", "url", r.URL.String(), "bytes", downloadBytes, "throttle", throttle)
 
 	patternReader := io.LimitReader(&patternByteReader{}, downloadBytes)
 	_, err = throttledCopy(w, patternReader, downloadBytes, throttle)
@@ -495,11 +495,11 @@ func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("File download completed")
+	slog.Debug("File download completed", "bytes", downloadBytes)
 }
 
 func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
-	slog.Info("Handling upload request", "url", r.URL.String())
+	slog.Debug("Handling upload request", "url", r.URL.String())
 
 	throttleStr := r.URL.Query().Get("throttle")
 	throttle, err := parseUnit(throttleStr)
@@ -527,6 +527,7 @@ func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, _ = w.Write(jsonResp)
+	slog.Debug("File upload completed", "bytes_uploaded", bytesRead)
 }
 
 // parseUnit parses query parameter supporting optional k/m/g suffixes.
