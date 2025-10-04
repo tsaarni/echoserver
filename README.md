@@ -22,7 +22,7 @@ go run github.com/tsaarni/echoserver@latest     # Run the server without install
 Echoserver is also available as a container image:
 
 ```
-ghcr.io/tsaarni/tsaarni/echoserver:latest
+ghcr.io/tsaarni/echoserver:latest
 ```
 
 Echoserver can be configured either using command line arguments or environment variables.
