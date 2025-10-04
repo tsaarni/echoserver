@@ -4,7 +4,7 @@ all:
 	CGO_ENABLED=0 go build .
 
 container:
-	docker build -t ghcr.io/tsaarni/tsaarni/echoserver:latest .
+	docker build -t ghcr.io/tsaarni/echoserver:latest .
 
 clean:
 	@rm -f echoserver
