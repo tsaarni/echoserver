@@ -6,8 +6,9 @@ information about the request. It is inspired by the
 from the
 [ingress-controller-conformance](https://github.com/kubernetes-sigs/ingress-controller-conformance)
 project. Additionally, the server can be used to test authentication and
-authorization features in ingress controllers by providing clients that make
+authorization features in ingress controllers by providing browser based clients that make
 requests to the echoserver.
+See also [echoclient](https://github.com/tsaarni/echoclient) project, a programmable HTTP load testing library.
 
 ## Usage
 
