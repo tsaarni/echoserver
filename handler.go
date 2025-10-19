@@ -17,6 +17,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"text/template"
 	"time"
 )
@@ -36,6 +37,9 @@ type Handler struct {
 	files      fs.FS
 	envContext map[string]string
 }
+
+// statusCode holds the persisted HTTP status code for /status responses.
+var statusCode int32 = http.StatusOK
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
@@ -242,17 +246,34 @@ func decodeCookies(cookies []*http.Cookie, info map[string]any) {
 	info["cookies"] = c
 }
 
-// statusHandler returns a response with the provided status code.
-// The status code is extracted from the URL path.
-// If not provided, it returns 200 OK.
+// statusHandler handles requests to the /status endpoint.
+// If the path is /status, it returns the currently stored status code (default is 200 OK).
+// If a `set` query parameter is provided, it updates the stored status code.
+// For paths like /status/{code}, it responds with the specified status code.
 func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling status request", "url", r.URL.String())
 
+	// If path is exactly /status, return the currently persisted status.
 	if r.URL.Path == "/status" {
-		w.WriteHeader(http.StatusOK)
+		// Update the stored status code.
+		if v := r.URL.Query().Get("set"); v != "" {
+			code, err := strconv.ParseInt(v, 10, 32)
+			if err == nil && code >= 100 && code <= 599 {
+				atomic.StoreInt32(&statusCode, int32(code))
+				slog.Debug("Persisted status code", "code", code)
+			} else {
+				slog.Warn("Invalid status code provided for set parameter", "value", v, "error", err)
+				http.Error(w, "Invalid status code provided for set parameter. Code must be a 3-digit number between 100 and 599.",
+					http.StatusBadRequest)
+				return
+			}
+		}
+
+		w.WriteHeader(int(atomic.LoadInt32(&statusCode)))
 		return
 	}
 
+	// Respond with the status code extracted from the URL path.
 	re := regexp.MustCompile(`^/status/(\d\d\d)$`)
 	match := re.FindStringSubmatch(r.URL.Path)
 	if match == nil {

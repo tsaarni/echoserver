@@ -124,15 +124,27 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
 
 </details>
 
-#### <code>/status</code> - Returns a `200 OK` status, indicating the server is operational.
+#### <code>/status</code> - Responds with the provided HTTP status code. Default: 200 OK.
 
 <details>
 
+##### Description
+
+By default, this endpoint returns an HTTP 200 OK status code.
+You can modify the status code using the `set` query parameter.
+The server will persist the updated status code, and subsequent requests to `/status` will return the new status code until it is changed again.
+
+##### Parameters
+
+| Name | Description                                 |
+| ---- | ------------------------------------------- |
+| set  | HTTP status code to persist (integer).      |
+
 ##### Responses
 
-| Status | Description            |
-| ------ | ---------------------- |
-| 200 OK | Server is operational. |
+| Status | Description                 |
+| ------ | --------------------------- |
+| code   | HTTP status code to return. |
 
 ##### Example
 
@@ -144,6 +156,16 @@ $ http GET http://localhost:8080/status
 HTTP/1.1 200 OK
 Content-Length: 0
 Date: Fri, 29 Nov 2024 06:24:46 GMT
+```
+
+```console
+$ http GET http://localhost:8080/status?set=503
+```
+
+```http
+HTTP/1.1 503 Service Unavailable
+Content-Length: 0
+Date: Sun, 19 Oct 2025 18:05:20 GMT
 ```
 
 </details>
