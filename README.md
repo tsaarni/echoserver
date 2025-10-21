@@ -164,9 +164,12 @@ The server will persist the updated status code, and subsequent requests to `/st
 
 ##### Responses
 
-| Status | Description                 |
-| ------ | --------------------------- |
-| code   | HTTP status code to return. |
+| Status | Description                     |
+| ------ | ------------------------------- |
+| code   | Request details in JSON format. |
+
+`code` is the HTTP status code set by the `set` query parameter or `200 OK` by default.
+Body contains the request details in JSON format as described in the `/*` endpoint.
 
 ##### Example
 
@@ -178,6 +181,8 @@ $ http GET http://localhost:8080/status
 HTTP/1.1 200 OK
 Content-Length: 0
 Date: Fri, 29 Nov 2024 06:24:46 GMT
+
+... Request details in JSON format ...
 ```
 
 ```console
@@ -188,6 +193,8 @@ $ http GET http://localhost:8080/status?set=503
 HTTP/1.1 503 Service Unavailable
 Content-Length: 0
 Date: Sun, 19 Oct 2025 18:05:20 GMT
+
+... Request details in JSON format ...
 ```
 
 </details>
@@ -200,9 +207,12 @@ Returns the specified HTTP status code.
 
 ##### Parameters
 
-| Name | Description                 |
-| ---- | --------------------------- |
-| code | HTTP status code to return. |
+| Status | Description                     |
+| ------ | ------------------------------- |
+| code   | Request details in JSON format. |
+
+`code` is the HTTP status code specified in the URL path.
+Body contains the request details in JSON format as described in the `/*` endpoint.
 
 Optionally, you can include additional HTTP headers in the response by providing a JSON object in the body or using a query string.
 
@@ -227,6 +237,8 @@ HTTP/1.1 301 Moved Permanently
 Content-Length: 0
 Date: Fri, 29 Nov 2024 06:10:25 GMT
 Location: http://localhost/bar
+
+... Request details in JSON format ...
 ```
 
 ```sh
@@ -241,6 +253,8 @@ Content-Length: 0
 Date: Sun, 15 Dec 2024 12:00:06 GMT
 Set-Cookie: foo=bar
 Set-Cookie: hello=world
+
+... Request details in JSON format ...
 ```
 
 </details>

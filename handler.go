@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"crypto/sha1" //nolint:gosec
 	"crypto/tls"
 	"encoding/base64"
@@ -63,13 +64,24 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 // echoHandler gathers information about the incoming request and returns it as a JSON response.
 func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
+
+	w.Header().Set("Content-Type", "application/json")
+
+	jsonData, err := h.createEchoResponseBody(r)
+	if err != nil {
+		http.Error(w, "Error while processing request", http.StatusBadRequest)
+		return
+	}
+
+	_, _ = w.Write(jsonData)
+}
+
+func (h *Handler) createEchoResponseBody(r *http.Request) ([]byte, error) {
 	info := h.collectRequestInfo(r)
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		slog.Error("Error reading body", "error", err)
-		http.Error(w, "Error reading body", http.StatusBadRequest)
-		return
+		return nil, err
 	}
 	if len(body) > 0 {
 		info["body"] = string(body)
@@ -77,14 +89,12 @@ func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 
 	h.processRequestBody(r, body, info)
 
-	w.Header().Set("Content-Type", "application/json")
 	jsonData, err := json.MarshalIndent(info, "", "  ")
 	if err != nil {
-		slog.Error("Error marshaling JSON", "error", err)
-		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
-		return
+		return nil, err
 	}
-	_, _ = w.Write(jsonData)
+
+	return jsonData, nil
 }
 
 func (h *Handler) collectRequestInfo(r *http.Request) map[string]any {
@@ -262,14 +272,16 @@ func decodeCookies(cookies []*http.Cookie, info map[string]any) {
 func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling status request", "url", r.URL.String())
 
+	var returnCode int64
+
 	// If path is exactly /status, return the currently persisted status.
 	if r.URL.Path == "/status" {
 		// Update the stored status code.
 		if v := r.URL.Query().Get("set"); v != "" {
-			code, err := strconv.ParseInt(v, 10, 32)
-			if err == nil && code >= 100 && code <= 599 {
-				atomic.StoreInt32(&statusCode, int32(code))
-				slog.Debug("Persisted status code", "code", code)
+			newCode, err := strconv.ParseInt(v, 10, 32)
+			if err == nil && newCode >= 100 && newCode <= 599 {
+				atomic.StoreInt32(&statusCode, int32(newCode))
+				slog.Debug("Persisted status code", "code", newCode)
 			} else {
 				slog.Warn("Invalid status code provided for set parameter", "value", v, "error", err)
 				http.Error(w, "Invalid status code provided for set parameter. Code must be a 3-digit number between 100 and 599.",
@@ -277,45 +289,61 @@ func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
+		returnCode = int64(atomic.LoadInt32(&statusCode))
+	} else {
 
-		w.WriteHeader(int(atomic.LoadInt32(&statusCode)))
-		return
-	}
-
-	// Respond with the status code extracted from the URL path.
-	re := regexp.MustCompile(`^/status/(\d\d\d)$`)
-	match := re.FindStringSubmatch(r.URL.Path)
-	if match == nil {
-		slog.Warn("Error parsing status code /status/{code}")
-		http.Error(w, "Invalid status code provided for /status/{code}. Code must be a 3-digit number.",
-			http.StatusBadRequest)
-		return
-	}
-	code, _ := strconv.Atoi(match[1])
-
-	if r.Body != nil {
-		var headers map[string]string
-		if err := json.NewDecoder(r.Body).Decode(&headers); err != nil && err != io.EOF {
-			slog.Warn("Error decoding JSON body", "error", err)
-			http.Error(w, "Error decoding JSON body", http.StatusBadRequest)
+		// Respond with the status code extracted from the URL path.
+		re := regexp.MustCompile(`^/status/(\d\d\d)$`)
+		match := re.FindStringSubmatch(r.URL.Path)
+		if match == nil {
+			slog.Warn("Error parsing status code /status/{code}")
+			http.Error(w, "Invalid status code provided for /status/{code}. Code must be a 3-digit number.",
+				http.StatusBadRequest)
 			return
 		}
+		returnCode, _ = strconv.ParseInt(match[1], 10, 32)
 
-		for key, value := range headers {
-			w.Header().Set(key, value)
+		if r.Body != nil {
+			bodyBytes, err := io.ReadAll(r.Body)
+			if err != nil {
+				slog.Warn("Error reading body", "error", err)
+				http.Error(w, "Error reading body", http.StatusBadRequest)
+				return
+			}
+
+			if len(bodyBytes) > 0 {
+				var headers map[string]string
+				if err := json.Unmarshal(bodyBytes, &headers); err == nil {
+					for key, value := range headers {
+						w.Header().Set(key, value)
+					}
+				}
+			}
+
+			// Restore the body for further processing.
+			r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+
+		// Parse query string and add them as headers.
+		query := r.URL.Query()
+		for key, values := range query {
+			for _, value := range values {
+				slog.Debug("Setting header", "key", key, "value", value)
+				w.Header().Add(key, value)
+			}
 		}
 	}
 
-	// Parse query string and add them as headers.
-	query := r.URL.Query()
-	for key, values := range query {
-		for _, value := range values {
-			slog.Debug("Setting header", "key", key, "value", value)
-			w.Header().Add(key, value)
-		}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(int(returnCode))
+
+	jsonData, err := h.createEchoResponseBody(r)
+	if err != nil {
+		http.Error(w, "Error while processing request", http.StatusBadRequest)
+		return
 	}
 
-	w.WriteHeader(code)
+	_, _ = w.Write(jsonData)
 }
 
 func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
