@@ -72,6 +72,12 @@ Following fields is included in the response:
   - `alpn_negotiated_protocol`: Application Layer Protocol Negotiation protocol.
   - `cipher_suite`: Cipher suite used in the connection.
   - `peer_certificates`: Peer certificates in PEM format if the client provided a certificate.
+  - `peer_certificates_decoded`: Decoded peer certificate details if the client provided a certificate.
+    - `subject`: Subject of the certificate.
+    - `issuer`: Issuer of the certificate.
+    - `serial_number`: Serial number of the certificate.
+    - `not_before`: Not before date of the certificate.
+    - `not_after`: Not after date of the certificate.
   - `version`: TLS version.
 - `query`: Query parameters of the request if the URL contains a query string.
 - `form`: Form parameters of the request body, if the content type is `application/x-www-form-urlencoded`.
@@ -115,7 +121,23 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
     "tls": {
         "alpn_negotiated_protocol": "http/1.1",
         "cipher_suite": "TLS_AES_128_GCM_SHA256",
-        "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBRTCB7aADAgECAggYEv19hfUwQDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNDEyMjAyMDQ1MjJaFw0yNTEyMjAyMDQ1MjJaMBExDzANBgNVBAMTBmNs\naWVudDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCbhS9nzLiBuFGDUp+vRfUQZ\nJ/pnDgTuJpPWSuPOjDLtZuhewGo5qxBMQBdHUbLruhNQ3bbcfPXXSyMe/VDMb4Sj\nMzAxMA4GA1UdDwEB/wQEAwIFoDAfBgNVHSMEGDAWgBR3JxAyNeNiSa/7Kb8yAfms\np4ozDDAKBggqhkjOPQQDAgNHADBEAiB2U34rNm3HUIsCwyaaixxO0bFulIQbOs0L\nxWM0CqNH+gIgaNm4Yu6rmGb2Ct7+i/k166TtcoSxjvJ11CdEKNTiJos=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUDCB+KADAgECAggYESedInsoiDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNDEyMTQyMTE0NDdaFw0yNTEyMTQyMTE0NDdaMA0xCzAJBgNVBAMTAmNh\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE9tDgaO4FFTiQxMauwt1g6BBBmVQu\nkIHPh9diQDiRCPiwF6S+sTCdame3q2vFpyF6MqbmPgzzqjZefuzbQTD+m6NCMEAw\nDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFHcnEDI1\n42JJr/spvzIB+aynijMMMAoGCCqGSM49BAMCA0cAMEQCIFEik3jlxD2MF9wJfdA+\nD5LfA3PFx05dQluCOrANza1sAiBt2VP7MQit8RFQ50CHFydouIcVzMfKGJLVFrKk\n/+NV5A==\n-----END CERTIFICATE-----\n",
+        "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBRTCB7aADAgECAggYXbRNl099CjAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMBExDzANBgNVBAMTBmNs\naWVudDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPhO4qIu71Cm5Ox5U5Pb6Og2\n4EMh/lWU4+OGDBkHIRXtyKTZCXzH5a1vQ0TO1jq6sjShZR8ihDYXRuPfcNVefj6j\nMzAxMA4GA1UdDwEB/wQEAwIFoDAfBgNVHSMEGDAWgBQGgzaN2tRzErVZCEe7Ucju\nTY5XBzAKBggqhkjOPQQDAgNHADBEAiB+Oc4DPody43cZ0e+MY7F63DnIPM5xtgwR\nG6IYdhXiAwIgYxOlBxxupGDvvhXyS7IV8KadGD8LVm8G059OJC9vIG0=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUTCB+KADAgECAggYXbRNlzUisDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMA0xCzAJBgNVBAMTAmNh\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFWG+fC3bE4X0oOHIGbH0d1VY1vQc\nDeu/ey1+bCXTsyFLld8rwk5KDjPGI+QGlL5lnEVYWZUQ8QQLYQLhK//uKKNCMEAw\nDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFAaDNo3a\n1HMStVkIR7tRyO5NjlcHMAoGCCqGSM49BAMCA0gAMEUCIAJLtjBdGvDYO18xZ2wI\nJYyzoxN8K4I5VodVwuF/4J5cAiEAmMeY8VbFFKBRLJhnd2wPHaK3pbbMozJ99nSC\nI2xUCvs=\n-----END CERTIFICATE-----\n",
+        "peer_certificates_decoded": [
+            {
+                "issuer": "CN=ca",
+                "not_after": "2026-08-21T06:27:55Z",
+                "not_before": "2025-08-21T06:27:55Z",
+                "serial_number": "1755757675088411914",
+                "subject": "CN=client"
+            },
+            {
+                "issuer": "CN=ca",
+                "not_after": "2026-08-21T06:27:55Z",
+                "not_before": "2025-08-21T06:27:55Z",
+                "serial_number": "1755757675086684848",
+                "subject": "CN=ca"
+            }
+        ],
         "version": "TLS 1.3"
     },
     "url": "/foobar"

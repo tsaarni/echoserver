@@ -135,15 +135,24 @@ func (h *Handler) processRequestBody(r *http.Request, body []byte, info map[stri
 func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
 	slog.Debug("TLS connection", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
 	var clientCerts string
+	var clientCertDecoded []map[string]any
 	for _, cert := range r.TLS.PeerCertificates {
 		clientCerts += string(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: cert.Raw}))
+		clientCertDecoded = append(clientCertDecoded, map[string]any{
+			"subject":       cert.Subject.String(),
+			"issuer":        cert.Issuer.String(),
+			"serial_number": cert.SerialNumber.String(),
+			"not_before":    cert.NotBefore,
+			"not_after":     cert.NotAfter,
+		})
 	}
 
 	info["tls"] = map[string]any{
-		"version":                  tls.VersionName(r.TLS.Version),
-		"alpn_negotiated_protocol": r.TLS.NegotiatedProtocol,
-		"cipher_suite":             tls.CipherSuiteName(r.TLS.CipherSuite),
-		"peer_certificates":        clientCerts,
+		"version":                   tls.VersionName(r.TLS.Version),
+		"alpn_negotiated_protocol":  r.TLS.NegotiatedProtocol,
+		"cipher_suite":              tls.CipherSuiteName(r.TLS.CipherSuite),
+		"peer_certificates":         clientCerts,
+		"peer_certificates_decoded": clientCertDecoded,
 	}
 }
 

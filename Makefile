@@ -25,4 +25,4 @@ generate-test-certs:
 	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.10.0 -d testdata/certs testdata/certs.yaml
 
 run: generate-test-certs
-	go run . -live -tls-cert-file testdata/certs/echoserver.pem -tls-key-file testdata/certs/echoserver-key.pem
+	go run . -http-addr 127.0.0.1:8080 -https-addr 127.0.0.1:8443 -live -tls-cert-file testdata/certs/echoserver.pem -tls-key-file testdata/certs/echoserver-key.pem
