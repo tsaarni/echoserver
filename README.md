@@ -416,7 +416,7 @@ This endpoint provides Prometheus-compatible metrics for monitoring the server.
 
 | Status | Description                              |
 | ------ | ---------------------------------------- |
-| 200 OK | Prometheus metrics in plain text format. |
+| 200 OK | Metrics in prometheus exposition format. |
 
 ##### Example
 
@@ -427,9 +427,7 @@ $ http GET http://localhost:8080/metrics
 ```text
 # HELP http_requests_total Total number of HTTP requests received.
 # TYPE http_requests_total counter
-http_requests_total{method="GET",path="/bar",status_code="200"} 3
-http_requests_total{method="GET",path="/foo",status_code="200"} 1
-http_requests_total{method="GET",path="/metrics",status_code="200"} 2
+http_requests_total{method="GET",status_code="200"} 5
 ...
 ```
 

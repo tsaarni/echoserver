@@ -16,7 +16,7 @@ var (
 			Name: "http_requests_total",
 			Help: "Total number of HTTP requests received.",
 		},
-		[]string{"method", "status_code", "path"},
+		[]string{"method", "status_code"},
 	)
 
 	httpRequestDuration = promauto.NewHistogramVec(
@@ -25,7 +25,7 @@ var (
 			Help:    "Duration of HTTP requests in seconds.",
 			Buckets: prometheus.DefBuckets,
 		},
-		[]string{"method", "path"},
+		[]string{"method"},
 	)
 
 	httpActiveConnections = promauto.NewGauge(
@@ -41,7 +41,7 @@ var (
 			Help:    "Size of HTTP responses in bytes.",
 			Buckets: prometheus.ExponentialBuckets(100, 10, 8),
 		},
-		[]string{"method", "path"},
+		[]string{"method"},
 	)
 
 	httpRequestSize = promauto.NewHistogramVec(
@@ -50,7 +50,7 @@ var (
 			Help:    "Size of HTTP requests in bytes.",
 			Buckets: prometheus.ExponentialBuckets(100, 10, 8),
 		},
-		[]string{"method", "path"},
+		[]string{"method"},
 	)
 
 	httpErrorsTotal = promauto.NewCounterVec(
@@ -78,7 +78,6 @@ var (
 func metricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		path := r.URL.Path
 		method := r.Method
 
 		httpActiveConnections.Inc()
@@ -88,12 +87,12 @@ func metricsMiddleware(next http.Handler) http.Handler {
 		ww := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(ww, r)
 
-		httpRequestsTotal.WithLabelValues(method, strconv.Itoa(ww.statusCode), path).Inc()
-		httpRequestDuration.WithLabelValues(method, path).Observe(time.Since(start).Seconds())
-		httpResponseSize.WithLabelValues(method, path).Observe(float64(ww.bytesWritten))
+		httpRequestsTotal.WithLabelValues(method, strconv.Itoa(ww.statusCode)).Inc()
+		httpRequestDuration.WithLabelValues(method).Observe(time.Since(start).Seconds())
+		httpResponseSize.WithLabelValues(method).Observe(float64(ww.bytesWritten))
 
 		if r.ContentLength > 0 {
-			httpRequestSize.WithLabelValues(method, path).Observe(float64(r.ContentLength))
+			httpRequestSize.WithLabelValues(method).Observe(float64(r.ContentLength))
 		}
 
 		if ww.statusCode >= 400 {
