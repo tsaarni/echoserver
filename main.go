@@ -201,7 +201,7 @@ func main() {
 		envContext: envContext,
 	}
 
-	http.Handle("/", handler)
+	http.Handle("/", metricsMiddleware(handler))
 
 	if config.CertFile != "" && config.KeyFile != "" {
 		go startHTTPSServer(config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)

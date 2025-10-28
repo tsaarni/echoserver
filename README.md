@@ -404,6 +404,39 @@ $ http --download http://localhost:8080/download?bytes=10M\&throttle=1M --output
 
 </details>
 
+#### <code>/metrics</code> - Metrics for monitoring.
+
+<details>
+
+##### Description
+
+This endpoint provides Prometheus-compatible metrics for monitoring the server.
+
+##### Responses
+
+| Status | Description                              |
+| ------ | ---------------------------------------- |
+| 200 OK | Prometheus metrics in plain text format. |
+
+##### Example
+
+```console
+$ http GET http://localhost:8080/metrics
+```
+
+```text
+# HELP http_requests_total Total number of HTTP requests received.
+# TYPE http_requests_total counter
+http_requests_total{method="GET",path="/bar",status_code="200"} 3
+http_requests_total{method="GET",path="/foo",status_code="200"} 1
+http_requests_total{method="GET",path="/metrics",status_code="200"} 2
+...
+```
+
+See [metrics.go](metrics.go) for details about the available metrics.
+
+</details>
+
 #### <code>/apps/</code> - Returns a list of available applications.
 
 #### <code>/apps/fetch.html</code> - Interactive HTTP request tool.
