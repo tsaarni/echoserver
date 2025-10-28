@@ -21,6 +21,8 @@ import (
 	"sync/atomic"
 	"text/template"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // patternByteReader implements io.Reader, returning a repeating pattern of bytes 0..255.
@@ -56,6 +58,8 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.downloadHandler(w, r)
 	case r.URL.Path == "/upload":
 		h.uploadHandler(w, r)
+	case r.URL.Path == "/metrics":
+		promhttp.Handler().ServeHTTP(w, r)
 	default:
 		h.echoHandler(w, r)
 	}
