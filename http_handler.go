@@ -36,7 +36,7 @@ func (r *patternByteReader) Read(p []byte) (int, error) {
 	return len(p), nil
 }
 
-type Handler struct {
+type HTTPHandler struct {
 	files      fs.FS
 	envContext map[string]string
 }
@@ -44,7 +44,14 @@ type Handler struct {
 // statusCode holds the persisted HTTP status code for /status responses.
 var statusCode int32 = http.StatusOK
 
-func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func newHTTPHandler(files fs.FS, envContext map[string]string) *HTTPHandler {
+	return &HTTPHandler{
+		files:      files,
+		envContext: envContext,
+	}
+}
+
+func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/status"):
 		h.statusHandler(w, r)
@@ -66,7 +73,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 // echoHandler gathers information about the incoming request and returns it as a JSON response.
-func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) echoHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -80,7 +87,7 @@ func (h *Handler) echoHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonData)
 }
 
-func (h *Handler) createEchoResponseBody(r *http.Request) ([]byte, error) {
+func (h *HTTPHandler) createEchoResponseBody(r *http.Request) ([]byte, error) {
 	info := h.collectRequestInfo(r)
 
 	body, err := io.ReadAll(r.Body)
@@ -101,7 +108,7 @@ func (h *Handler) createEchoResponseBody(r *http.Request) ([]byte, error) {
 	return jsonData, nil
 }
 
-func (h *Handler) collectRequestInfo(r *http.Request) map[string]any {
+func (h *HTTPHandler) collectRequestInfo(r *http.Request) map[string]any {
 	info := map[string]any{
 		"method":         r.Method,
 		"url":            r.URL.String(),
@@ -136,7 +143,7 @@ func (h *Handler) collectRequestInfo(r *http.Request) map[string]any {
 	return info
 }
 
-func (h *Handler) processRequestBody(r *http.Request, body []byte, info map[string]any) {
+func (h *HTTPHandler) processRequestBody(r *http.Request, body []byte, info map[string]any) {
 	if r.Header.Get("Content-Type") == "application/x-www-form-urlencoded" {
 		values, err := url.ParseQuery(string(body))
 		if err == nil {
@@ -146,7 +153,7 @@ func (h *Handler) processRequestBody(r *http.Request, body []byte, info map[stri
 }
 
 // decodeTLSInfo extracts TLS information from the request.
-func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
+func (h *HTTPHandler) decodeTLSInfo(r *http.Request, info map[string]any) {
 	var clientCerts string
 	var clientCertDecoded []map[string]any
 	for _, cert := range r.TLS.PeerCertificates {
@@ -176,7 +183,7 @@ func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
 }
 
 // decodeAuthorizationInfo extracts information from the Authorization header.
-func (h *Handler) decodeAuthorizationInfo(authorization string, info map[string]any) {
+func (h *HTTPHandler) decodeAuthorizationInfo(authorization string, info map[string]any) {
 	val := strings.SplitN(authorization, " ", 2)
 	if len(val) != 2 {
 		slog.Warn("Invalid authorization header format")
@@ -278,7 +285,7 @@ func decodeCookies(cookies []*http.Cookie, info map[string]any) {
 // If the path is /status, it returns the currently stored status code (default is 200 OK).
 // If a `set` query parameter is provided, it updates the stored status code.
 // For paths like /status/{code}, it responds with the specified status code.
-func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling status request", "url", r.URL.String())
 
 	var returnCode int64
@@ -355,7 +362,7 @@ func (h *Handler) statusHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(jsonData)
 }
 
-func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling template request", "url", r.URL.String())
 
 	relativePath := strings.TrimPrefix(r.URL.Path, "/apps/")
@@ -392,7 +399,7 @@ func (h *Handler) templateHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // serverSentEventHandler implements a long polling server that periodically sends "ping" messages.
-func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) serverSentEventHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling stream request", "url", r.URL.String())
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -426,7 +433,7 @@ func (h *Handler) serverSentEventHandler(w http.ResponseWriter, r *http.Request)
 	}
 }
 
-func (h *Handler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling websocket request", "url", r.URL.String())
 
 	if r.Header.Get("Upgrade") != "websocket" {
@@ -529,7 +536,7 @@ func calculateWebSocketAcceptKey(key string) string {
 	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
 
-func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -565,7 +572,7 @@ func (h *Handler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("File download completed", "bytes", downloadBytes)
 }
 
-func (h *Handler) uploadHandler(w http.ResponseWriter, r *http.Request) {
+func (h *HTTPHandler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling upload request", "url", r.URL.String())
 
 	throttleStr := r.URL.Query().Get("throttle")

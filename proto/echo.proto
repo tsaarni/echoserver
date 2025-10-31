@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package echo;
+
+option go_package = "github.com/tsaarni/echoserver/proto";
+
+service EchoService {
+  rpc Echo(EchoRequest) returns (EchoResponse);
+}
+
+message EchoRequest {
+  string message = 1;
+}
+
+message EchoResponse {
+  string message = 1;
+  map<string, HeaderValues> headers = 2;
+  string remote_addr = 3;
+  TLSInfo tls_info = 5;
+  map<string, string> env = 7;
+}
+
+message HeaderValues {
+  repeated string values = 1;
+}
+
+message TLSInfo {
+  string version = 1;
+  string cipher_suite = 2;
+  string client_cert_subject = 3;
+  string client_cert_issuer = 4;
+  string client_cert_serial_number = 5;
+  string client_cert_not_before = 6;
+  string client_cert_not_after = 7;
+  string alpn_negotiated_protocol = 8;
+}
