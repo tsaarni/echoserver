@@ -147,7 +147,6 @@ func (h *Handler) processRequestBody(r *http.Request, body []byte, info map[stri
 
 // decodeTLSInfo extracts TLS information from the request.
 func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
-	slog.Debug("TLS connection", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
 	var clientCerts string
 	var clientCertDecoded []map[string]any
 	for _, cert := range r.TLS.PeerCertificates {
@@ -159,6 +158,12 @@ func (h *Handler) decodeTLSInfo(r *http.Request, info map[string]any) {
 			"not_before":    cert.NotBefore,
 			"not_after":     cert.NotAfter,
 		})
+	}
+
+	if len(clientCertDecoded) > 0 {
+		slog.Debug("TLS info", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite), "peer_certificate_subject", r.TLS.PeerCertificates[0].Subject.String(), "peer_certificate_not_before", r.TLS.PeerCertificates[0].NotBefore, "peer_certificate_not_after", r.TLS.PeerCertificates[0].NotAfter, "peer_certificate_serial_number", r.TLS.PeerCertificates[0].SerialNumber.String())
+	} else {
+		slog.Debug("TLS info", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
 	}
 
 	info["tls"] = map[string]any{
