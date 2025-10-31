@@ -115,9 +115,15 @@ func setupFilesystem(live bool) {
 }
 
 func startHTTPServer(addr string) {
+	var protocols http.Protocols
+	protocols.SetHTTP1(true)
+	protocols.SetHTTP2(true)
+	protocols.SetUnencryptedHTTP2(true)
+
 	server := &http.Server{
 		Addr:              addr,
 		ReadHeaderTimeout: time.Duration(5) * time.Second,
+		Protocols:         &protocols,
 	}
 	slog.Info("Server is running in HTTP mode", "address", server.Addr)
 	err := server.ListenAndServe()
@@ -196,10 +202,17 @@ func main() {
 	setupFilesystem(config.Live)
 	parseEnvContext()
 
-	handler := &Handler{
-		files:      files,
-		envContext: envContext,
-	}
+	httpHandler := newHTTPHandler(files, envContext)
+	grpcService := newGRPCEchoService(envContext)
+
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		contentType := r.Header.Get("Content-Type")
+		if strings.HasPrefix(contentType, "application/grpc") {
+			grpcService.ServeHTTP(w, r)
+		} else {
+			httpHandler.ServeHTTP(w, r)
+		}
+	})
 
 	http.Handle("/", metricsMiddleware(handler))
 

@@ -1,6 +1,6 @@
 .PHONY: all lint lint-go lint-js lint-html clean container generate-test-certs run
 
-all:
+all: generate-proto
 	CGO_ENABLED=0 go build .
 
 container:
@@ -24,5 +24,12 @@ generate-test-certs:
 	@mkdir -p testdata/certs
 	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.10.0 -d testdata/certs testdata/certs.yaml
 
-run: generate-test-certs
+generate-proto: proto/echo.pb.go proto/echo_grpc.pb.go
+
+proto/echo.pb.go proto/echo_grpc.pb.go: proto/echo.proto
+	protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		proto/echo.proto
+
+run: generate-test-certs generate-proto
 	go run . -http-addr 127.0.0.1:8080 -https-addr 127.0.0.1:8443 -live -tls-cert-file testdata/certs/echoserver.pem -tls-key-file testdata/certs/echoserver-key.pem
