@@ -435,7 +435,7 @@ See [metrics.go](metrics.go) for details about the available metrics.
 
 </details>
 
-#### <code>/grpc.EchoService/*</code> - gRPC Echo service.
+#### <code>/grpc.EchoService/Echo</code> - gRPC Echo service.
 
 <details>
 
