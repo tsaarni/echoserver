@@ -443,6 +443,7 @@ See [metrics.go](metrics.go) for details about the available metrics.
 
 Endpoint that return details about incoming gRPC request.
 For the service definition see [`proto/echo.proto`](proto/echo.proto).
+The service supports gRPC reflection.
 
 ##### Example
 
@@ -453,11 +454,18 @@ Install it with:
 go install github.com/fullstorydev/grpcurl/cmd/grpcurl@v1.9.3
 ```
 
+To use the reflection service to list available services:
+
+```sh
+$ grpcurl -plaintext localhost:8080 list
+$ grpcurl -plaintext localhost:8080 describe echo.EchoService
+```
+
 To call the Echo method over HTTP/2:
 
 
 ```sh
-$ grpcurl -cacert testdata/certs/ca.pem -proto proto/echo.proto -d '{"message": "Hello"}' localhost:8443 echo.EchoService/Echo
+$ grpcurl -cacert testdata/certs/ca.pem -d '{"message": "Hello"}' localhost:8443 echo.EchoService/Echo
 ```
 
 ```json
@@ -497,7 +505,7 @@ $ grpcurl -cacert testdata/certs/ca.pem -proto proto/echo.proto -d '{"message": 
 Or using H2C (plaintext) transport:
 
 ```sh
-$ grpcurl -plaintext -proto proto/echo.proto -d '{"message": "Hello"}' localhost:8080 echo.EchoService/Echo
+$ grpcurl -plaintext -d '{"message": "Hello"}' localhost:8080 echo.EchoService/Echo
 ```
 
 ```json

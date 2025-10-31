@@ -11,6 +11,7 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/reflection"
 )
 
 type grpcEchoService struct {
@@ -19,11 +20,13 @@ type grpcEchoService struct {
 }
 
 func newGRPCEchoService(envContext map[string]string) *grpc.Server {
-	grpcServer := grpc.NewServer()
 	echoService := &grpcEchoService{
 		envContext: envContext,
 	}
+	grpcServer := grpc.NewServer()
 	pb.RegisterEchoServiceServer(grpcServer, echoService)
+	reflection.Register(grpcServer)
+
 	return grpcServer
 }
 
