@@ -21,7 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// Request message.
 type EchoRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
@@ -66,7 +65,6 @@ func (x *EchoRequest) GetMessage() string {
 	return ""
 }
 
-// Response with echoed message and metadata.
 type EchoResponse struct {
 	state         protoimpl.MessageState   `protogen:"open.v1"`
 	Message       string                   `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
@@ -143,7 +141,6 @@ func (x *EchoResponse) GetEnv() map[string]string {
 	return nil
 }
 
-// Header values.
 type HeaderValues struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
@@ -188,7 +185,6 @@ func (x *HeaderValues) GetValues() []string {
 	return nil
 }
 
-// TLS connection info.
 type TLSInfo struct {
 	state                  protoimpl.MessageState `protogen:"open.v1"`
 	Version                string                 `protobuf:"bytes,1,opt,name=version,proto3" json:"version,omitempty"`

@@ -454,13 +454,6 @@ Install it with:
 go install github.com/fullstorydev/grpcurl/cmd/grpcurl@v1.9.3
 ```
 
-To use the reflection service to list available services:
-
-```sh
-$ grpcurl -plaintext localhost:8080 list
-$ grpcurl -plaintext localhost:8080 describe echo.EchoService
-```
-
 To call the Echo method over HTTP/2:
 
 
@@ -536,6 +529,8 @@ $ grpcurl -plaintext -d '{"message": "Hello"}' localhost:8080 echo.EchoService/E
   "remoteAddr": "127.0.0.1:60740"
 }
 ```
+
+To use the reflection service to list available services, use `grpcurl list` and `grpcurl describe` commands.
 
 </details>
 
