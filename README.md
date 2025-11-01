@@ -47,6 +47,9 @@ key files without restarting the server.
 
 Example commands in the descriptions are given using the [HTTPie](https://httpie.io/) tool.
 
+The gRPC endpoint examples are given using the [`grpcurl`](https://github.com/fullstorydev/grpcurl) tool.
+
+
 #### <code>/*</code> - Returns request details in JSON format.
 
 <details>
@@ -441,24 +444,16 @@ See [metrics.go](metrics.go) for details about the available metrics.
 
 ##### Description
 
-Endpoint that return details about incoming gRPC request.
+Endpoint that responds with details about incoming gRPC request.
 For the service definition see [`proto/echo.proto`](proto/echo.proto).
 The service supports gRPC reflection.
 
 ##### Example
 
-To invoke the gRPC Echo service, you can use the [`grpcurl`](https://github.com/fullstorydev/grpcurl) tool.
-Install it with:
-
-```sh
-go install github.com/fullstorydev/grpcurl/cmd/grpcurl@v1.9.3
-```
-
 To call the Echo method over HTTP/2:
 
-
 ```sh
-$ grpcurl -cacert testdata/certs/ca.pem -d '{"message": "Hello"}' localhost:8443 echo.EchoService/Echo
+$ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key testdata/certs/client-key.pem -d '{"message": "Hello"}' localhost:8443 echo.EchoService/Echo
 ```
 
 ```json
@@ -486,11 +481,20 @@ $ grpcurl -cacert testdata/certs/ca.pem -d '{"message": "Hello"}' localhost:8443
       ]
     }
   },
-  "remoteAddr": "127.0.0.1:54936",
+  "remoteAddr": "127.0.0.1:57270",
   "tlsInfo": {
     "version": "TLS 1.3",
     "cipherSuite": "TLS_AES_128_GCM_SHA256",
-    "alpnNegotiatedProtocol": "h2"
+    "alpnNegotiatedProtocol": "h2",
+    "peerCertificates": [
+      {
+        "subject": "CN=client",
+        "issuer": "CN=ca",
+        "serialNumber": "1755757675088411914",
+        "notBefore": "2025-08-21T06:27:55Z",
+        "notAfter": "2026-08-21T06:27:55Z"
+      }
+    ]
   }
 }
 ```
@@ -530,7 +534,32 @@ $ grpcurl -plaintext -d '{"message": "Hello"}' localhost:8080 echo.EchoService/E
 }
 ```
 
-To use the reflection service to list available services, use `grpcurl list` and `grpcurl describe` commands.
+</details>
+
+#### <code>/grpc.EchoService/EchoCountdown</code> - gRPC EchoCountdown service.
+
+<details>
+
+##### Description
+
+Streams countdown messages starting from the specified value `start` down to zero, emitting one message per second.
+For the service definition see [`proto/echo.proto`](proto/echo.proto).
+The service supports gRPC reflection.
+
+##### Example
+
+```sh
+$ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key testdata/certs/client-key.pem -emit-defaults -d '{"start": 2}' localhost:8443 echo.EchoService/EchoCountdown
+{
+  "count": 2
+}
+{
+  "count": 1
+}
+{
+  "count": 0
+}
+```
 
 </details>
 

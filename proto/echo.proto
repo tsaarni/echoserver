@@ -6,6 +6,7 @@ option go_package = "github.com/tsaarni/echoserver/proto";
 
 service EchoService {
   rpc Echo(EchoRequest) returns (EchoResponse);
+  rpc EchoCountdown(EchoCountdownRequest) returns (stream EchoCountdownResponse);
 }
 
 message EchoRequest {
@@ -16,8 +17,8 @@ message EchoResponse {
   string message = 1;
   map<string, HeaderValues> headers = 2;
   string remote_addr = 3;
-  TLSInfo tls_info = 5;
-  map<string, string> env = 7;
+  TLSInfo tls_info = 4;
+  map<string, string> env = 5;
 }
 
 message HeaderValues {
@@ -27,10 +28,22 @@ message HeaderValues {
 message TLSInfo {
   string version = 1;
   string cipher_suite = 2;
-  string client_cert_subject = 3;
-  string client_cert_issuer = 4;
-  string client_cert_serial_number = 5;
-  string client_cert_not_before = 6;
-  string client_cert_not_after = 7;
-  string alpn_negotiated_protocol = 8;
+  string alpn_negotiated_protocol = 3;
+  repeated TLSCertificateInfo peer_certificates = 4;
+}
+
+message TLSCertificateInfo {
+  string subject = 1;
+  string issuer = 2;
+  string serial_number = 3;
+  string not_before = 4;
+  string not_after = 5;
+}
+
+message EchoCountdownRequest {
+  int32 start = 1;
+}
+
+message EchoCountdownResponse {
+  int32 count = 1;
 }

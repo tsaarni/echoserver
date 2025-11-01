@@ -31,7 +31,8 @@ func newGRPCEchoService(envContext map[string]string) *grpc.Server {
 }
 
 func (s *grpcEchoService) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.EchoResponse, error) {
-	slog.Debug("Processing gRPC echo request", "message", req.Message)
+	p, _ := peer.FromContext(ctx)
+	slog.Debug("Processing gRPC Echo request", "message", req.Message, "remote", p.Addr.String())
 
 	resp := &pb.EchoResponse{
 		Message: req.Message,
@@ -47,27 +48,64 @@ func (s *grpcEchoService) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.Ec
 		}
 	}
 
-	if p, ok := peer.FromContext(ctx); ok {
-		resp.RemoteAddr = p.Addr.String()
+	resp.RemoteAddr = p.Addr.String()
 
-		if tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo); ok {
-			state := tlsInfo.State
-			resp.TlsInfo = &pb.TLSInfo{
-				Version:                tls.VersionName(state.Version),
-				CipherSuite:            tls.CipherSuiteName(state.CipherSuite),
-				AlpnNegotiatedProtocol: state.NegotiatedProtocol,
-			}
+	if tlsInfo, ok := p.AuthInfo.(credentials.TLSInfo); ok {
+		state := tlsInfo.State
+		resp.TlsInfo = &pb.TLSInfo{
+			Version:                tls.VersionName(state.Version),
+			CipherSuite:            tls.CipherSuiteName(state.CipherSuite),
+			AlpnNegotiatedProtocol: state.NegotiatedProtocol,
+		}
 
-			if len(state.PeerCertificates) > 0 {
-				cert := state.PeerCertificates[0]
-				resp.TlsInfo.ClientCertSubject = cert.Subject.String()
-				resp.TlsInfo.ClientCertIssuer = cert.Issuer.String()
-				resp.TlsInfo.ClientCertSerialNumber = cert.SerialNumber.String()
-				resp.TlsInfo.ClientCertNotBefore = cert.NotBefore.Format(time.RFC3339)
-				resp.TlsInfo.ClientCertNotAfter = cert.NotAfter.Format(time.RFC3339)
+		for _, cert := range state.PeerCertificates {
+			certInfo := &pb.TLSCertificateInfo{
+				Subject:      cert.Subject.String(),
+				Issuer:       cert.Issuer.String(),
+				SerialNumber: cert.SerialNumber.String(),
+				NotBefore:    cert.NotBefore.Format(time.RFC3339),
+				NotAfter:     cert.NotAfter.Format(time.RFC3339),
 			}
+			resp.TlsInfo.PeerCertificates = append(resp.TlsInfo.PeerCertificates, certInfo)
 		}
 	}
 
 	return resp, nil
+}
+
+func (s *grpcEchoService) EchoCountdown(req *pb.EchoCountdownRequest, stream pb.EchoService_EchoCountdownServer) error {
+	p, _ := peer.FromContext(stream.Context())
+	slog.Debug("Processing gRPC EchoCountdown request", "start", req.Start, "remote", p.Addr.String())
+
+	if req.Start < 0 {
+		slog.Debug("Invalid start value for EchoCountdown", "start", req.Start, "remote", p.Addr.String())
+		return nil
+	}
+
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for i := req.Start; i >= 0; i-- {
+		slog.Debug("Sending countdown", "count", i, "remote", p.Addr.String())
+		resp := &pb.EchoCountdownResponse{
+			Count: i,
+		}
+		if err := stream.Send(resp); err != nil {
+			return err
+		}
+
+		if i == 0 {
+			break
+		}
+
+		select {
+		case <-ticker.C:
+			// Continue to next iteration
+		case <-stream.Context().Done():
+			slog.Debug("Client cancelled countdown", "remote", p.Addr.String())
+			return stream.Context().Err()
+		}
+	}
+
+	return nil
 }
