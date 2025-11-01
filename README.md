@@ -438,7 +438,7 @@ See [metrics.go](metrics.go) for details about the available metrics.
 
 </details>
 
-#### <code>/grpc.EchoService/Echo</code> - gRPC Echo service.
+#### <code>/grpc.EchoService/Echo</code> - gRPC endpoint that responds with request details.
 
 <details>
 
@@ -536,7 +536,7 @@ $ grpcurl -plaintext -d '{"message": "Hello"}' localhost:8080 echo.EchoService/E
 
 </details>
 
-#### <code>/grpc.EchoService/EchoCountdown</code> - gRPC EchoCountdown service.
+#### <code>/grpc.EchoService/EchoCountdown</code> - gRPC stream that sends one message per second.
 
 <details>
 
