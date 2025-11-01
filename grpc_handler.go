@@ -6,6 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+
 	pb "github.com/tsaarni/echoserver/proto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -23,9 +25,13 @@ func newGRPCEchoService(envContext map[string]string) *grpc.Server {
 	echoService := &grpcEchoService{
 		envContext: envContext,
 	}
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_prometheus.UnaryServerInterceptor),
+		grpc.StreamInterceptor(grpc_prometheus.StreamServerInterceptor),
+	)
 	pb.RegisterEchoServiceServer(grpcServer, echoService)
 	reflection.Register(grpcServer)
+	grpc_prometheus.Register(grpcServer)
 
 	return grpcServer
 }
