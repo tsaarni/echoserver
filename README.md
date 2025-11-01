@@ -40,8 +40,12 @@ Following table lists the available configuration options:
 |                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for more information.                |          |
 | `-log-level`     | `LOG_LEVEL`     | Log level. Possible values are `debug`, `info`, `warn`, and `error`.                                                   | `debug`  |
 
+[1]: https://wiki.wireshark.org/TLS#tls-decryption
+
 The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and
 key files without restarting the server.
+Client can provide an optional client certificate when making HTTPS requests to the server.
+
 
 ### API
 
@@ -629,62 +633,6 @@ A JavaScript application that makes Server-Sent Events (SSE) or WebSocket connec
 
 </details>
 
-## Development
+## Contributing
 
-To build and run the echoserver locally, use the following commands:
-
-```sh
-make
-./echoserver
-```
-
-To serve HTML files from the filesystem instead of using bundled files, use the
-following command:
-
-```sh
-./echoserver -live
-```
-
-To build the container image, use the following command:
-
-```sh
-make container
-```
-
-To lint the code, use the following command:
-
-```sh
-make lint
-```
-
-To test the OIDC applications, you need to have an OIDC provider. To run
-Keyclaok as an OIDC provider, use the following command:
-
-```sh
-make run           # Generate test certificates and run echoserver in one terminal.
-docker compose up  # Run Envoy and Keycloak in another terminal.
-```
-
-Then access the echoserver server at https://echoserver.127.0.0.1.nip.io/apps/
-and Keycloak admin console at https://keycloak.127.0.0.1.nip.io/. Envoy will
-validate JWT for endpoints matching with
-https://echoserver.127.0.0.1.nip.io/protected.
-
-> ⚠️ NOTE ⚠️
->
-> You will get an error for first login, because the certificate is self-signed.
-> To fix this, visit [Keycloak admin console](https://keycloak.127.0.0.1.nip.io/) once and accept the certificate.
->
-> If running on Linux with firewall like UFW, traffic from docker bridge network to host network may be blocked.
-> For UFW use `sudo ufw allow from 172.0.0.0/8`to allow traffic.
-
-The admin console credentials are `admin:admin`, and the user credentials in `echoserver` realm are `joe:joe` and `jane:jane`.
-
-Keycloak has been configured with the following clients:
-
-- echoserver-public
-- echoserver-public-dpop
-
-The latter one is configured to require [DPoP](https://datatracker.ietf.org/doc/html/rfc9449).
-
-[1]: https://wiki.wireshark.org/TLS#tls-decryption
+Please refer to [CONTRIBUTING.md](CONTRIBUTING.md).
