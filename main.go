@@ -124,6 +124,7 @@ func startHTTPServer(addr string) {
 		Addr:              addr,
 		ReadHeaderTimeout: time.Duration(5) * time.Second,
 		Protocols:         &protocols,
+		ConnState:         connStateMetrics,
 	}
 	slog.Info("Server is running in HTTP mode", "address", server.Addr)
 	err := server.ListenAndServe()
@@ -161,6 +162,7 @@ func startHTTPSServer(addr string, certFile, keyFile string, keyLogFile string) 
 	server := &http.Server{
 		Addr:              addr,
 		ReadHeaderTimeout: time.Duration(5) * time.Second,
+		ConnState:         connStateMetrics,
 	}
 	server.TLSConfig = &tls.Config{ // #nosec // G402: TLS MinVersion too low.
 		ClientAuth:     tls.RequestClientCert,

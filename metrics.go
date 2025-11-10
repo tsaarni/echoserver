@@ -1,8 +1,10 @@
 package main
 
 import (
+	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -28,11 +30,19 @@ var (
 		[]string{"method"},
 	)
 
-	httpActiveConnections = promauto.NewGauge(
+	httpConcurrentRequests = promauto.NewGauge(
 		prometheus.GaugeOpts{
-			Name: "http_active_connections",
-			Help: "Current number of active connections.",
+			Name: "http_concurrent_requests",
+			Help: "Current number of concurrent HTTP requests being handled.",
 		},
+	)
+
+	httpConnectionsByState = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Name: "http_connections_by_state",
+			Help: "Current number of connections in each state (new, active, idle, hijacked).",
+		},
+		[]string{"state"},
 	)
 
 	httpResponseSize = promauto.NewHistogramVec(
@@ -72,7 +82,36 @@ var (
 		},
 	)
 	serverStartTime = time.Now()
+
+	// Connection state tracking.
+	connStateMu    sync.Mutex
+	connStateTrack = make(map[net.Conn]http.ConnState)
 )
+
+// connStateMetrics tracks connection state changes for metrics.
+func connStateMetrics(conn net.Conn, state http.ConnState) {
+	connStateMu.Lock()
+	defer connStateMu.Unlock()
+
+	if prevState, exists := connStateTrack[conn]; exists {
+		// Decrement the previous state counter.
+		httpConnectionsByState.WithLabelValues(prevState.String()).Dec()
+	}
+
+	// Terminal states don't get incremented (connection is gone).
+	if state == http.StateClosed {
+		delete(connStateTrack, conn)
+	} else {
+		// Increment the new state counter and track it.
+		httpConnectionsByState.WithLabelValues(state.String()).Inc()
+		connStateTrack[conn] = state
+	}
+
+	// StateHijacked is terminal and outside server control.
+	if state == http.StateHijacked {
+		delete(connStateTrack, conn)
+	}
+}
 
 // metricsMiddleware records metrics for HTTP requests.
 func metricsMiddleware(next http.Handler) http.Handler {
@@ -80,8 +119,8 @@ func metricsMiddleware(next http.Handler) http.Handler {
 		start := time.Now()
 		method := r.Method
 
-		httpActiveConnections.Inc()
-		defer httpActiveConnections.Dec()
+		httpConcurrentRequests.Inc()
+		defer httpConcurrentRequests.Dec()
 
 		// Wrap response writer to capture status code and response size.
 		ww := &responseWriterWrapper{ResponseWriter: w, statusCode: http.StatusOK}
