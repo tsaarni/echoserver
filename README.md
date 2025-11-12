@@ -29,23 +29,22 @@ Echoserver can be configured either using command line arguments or environment 
 Command line arguments take precedence over environment variables.
 Following table lists the available configuration options:
 
-| Command line     | Variable        | Description                                                                                                            | Default  |
-| ---------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- | -------- |
-| `-http-addr`     | `HTTP_ADDR`     | Address to bind the HTTP server socket.                                                                                | `:8080`  |
-| `-https-addr`    | `HTTPS_ADDR`    | Address to bind the HTTPS server socket.                                                                               | `:8443`  |
-| `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file.                                                                                          |          |
-| `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file.                                                                                                  |          |
-|                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates. |          |
-| `-live`          |                 | Serve static files directly from the `./apps` directory instead of using bundled files in the binary.                  | `false`  |
-|                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for more information.                |          |
-| `-log-level`     | `LOG_LEVEL`     | Log level. Possible values are `debug`, `info`, `warn`, and `error`.                                                   | `debug`  |
+| Command line     | Variable        | Description                                                                                                            | Default |
+| ---------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------- | ------- |
+| `-http-addr`     | `HTTP_ADDR`     | Address to bind the HTTP server socket.                                                                                | `:8080` |
+| `-https-addr`    | `HTTPS_ADDR`    | Address to bind the HTTPS server socket.                                                                               | `:8443` |
+| `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file.                                                                                          |         |
+| `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file.                                                                                                  |         |
+|                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates. |         |
+| `-live`          |                 | Serve static files directly from the `./apps` directory instead of using bundled files in the binary.                  | `false` |
+|                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for more information.                |         |
+| `-log-level`     | `LOG_LEVEL`     | Log level. Possible values are `debug`, `info`, `warn`, and `error`.                                                   | `debug` |
 
 [1]: https://wiki.wireshark.org/TLS#tls-decryption
 
 The certificate and key files will be loaded from the filesystem every time a request is made to the server, so it is possible to update the certificate and
 key files without restarting the server.
 Client can provide an optional client certificate when making HTTPS requests to the server.
-
 
 ### API
 
@@ -153,7 +152,7 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
 
 </details>
 
-#### <code>/status</code> - Responds with the provided HTTP status code. Default: 200 OK.
+#### <code>/status</code> - Responds with the provided HTTP status code.
 
 <details>
 
@@ -165,9 +164,9 @@ The server will persist the updated status code, and subsequent requests to `/st
 
 ##### Parameters
 
-| Name | Description                                 |
-| ---- | ------------------------------------------- |
-| set  | HTTP status code to persist (integer).      |
+| Name | Description                            |
+| ---- | -------------------------------------- |
+| set  | HTTP status code to persist (integer). |
 
 ##### Responses
 
@@ -419,6 +418,30 @@ $ http --download http://localhost:8080/download?bytes=10M\&throttle=1M --output
 
 This endpoint provides Prometheus-compatible metrics for monitoring the server.
 
+The following metrics are available for the server:
+
+| Metric Name                     | Description                                                                |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| `http_requests_total`           | Total number of HTTP requests received.                                    |
+| `http_request_duration_seconds` | Duration of HTTP requests in seconds.                                      |
+| `http_concurrent_requests`      | Current number of concurrent HTTP requests being handled.                  |
+| `http_connections_by_state`     | Current number of connections in each state (new, active, idle, hijacked). |
+| `http_response_size_bytes`      | Size of HTTP responses in bytes.                                           |
+| `http_request_size_bytes`       | Size of HTTP requests in bytes.                                            |
+| `http_errors_total`             | Total number of HTTP errors encountered.                                   |
+| `server_uptime_seconds`         | Total uptime of the server in seconds.                                     |
+
+Additionally, the prometheus client library provides default Go runtime metrics such as `go_goroutines`, `go_threads`.
+
+[go-grpc-middleware](https://github.com/grpc-ecosystem/go-grpc-middleware) provides following metrics
+
+| Metric Name                      | Description                             |
+| -------------------------------- | --------------------------------------- |
+| `grpc_server_handled_total`      | Total number of gRPC requests handled.  |
+| `grpc_server_msg_received_total` | Total number of gRPC messages received. |
+| `grpc_server_msg_sent_total`     | Total number of gRPC messages sent.     |
+| `grpc_server_started_total`      | Total number of gRPC requests started.  |
+
 ##### Responses
 
 | Status | Description                              |
@@ -437,8 +460,6 @@ $ http GET http://localhost:8080/metrics
 http_requests_total{method="GET",status_code="200"} 5
 ...
 ```
-
-See [metrics.go](metrics.go) for details about the available metrics.
 
 </details>
 
