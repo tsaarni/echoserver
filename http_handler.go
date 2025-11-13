@@ -179,6 +179,7 @@ func (h *HTTPHandler) decodeTLSInfo(r *http.Request, info map[string]any) {
 		"cipher_suite":              tls.CipherSuiteName(r.TLS.CipherSuite),
 		"peer_certificates":         clientCerts,
 		"peer_certificates_decoded": clientCertDecoded,
+		"server_name":               r.TLS.ServerName,
 	}
 }
 

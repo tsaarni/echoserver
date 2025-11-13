@@ -30,6 +30,7 @@ message TLSInfo {
   string cipher_suite = 2;
   string alpn_negotiated_protocol = 3;
   repeated TLSCertificateInfo peer_certificates = 4;
+  string server_name = 5;
 }
 
 message TLSCertificateInfo {

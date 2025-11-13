@@ -52,8 +52,7 @@ Example commands in the descriptions are given using the [HTTPie](https://httpie
 
 The gRPC endpoint examples are given using the [`grpcurl`](https://github.com/fullstorydev/grpcurl) tool.
 
-
-#### <code>/*</code> - Returns request details in JSON format.
+#### <code>/{path}</code> - Returns request details in JSON format.
 
 <details>
 
@@ -105,48 +104,41 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
 
 ```json
 {
-    "content_length": 0,
-    "headers": {
-        "Accept": [
-            "*/*"
-        ],
-        "Accept-Encoding": [
-            "gzip, deflate"
-        ],
-        "Connection": [
-            "keep-alive"
-        ],
-        "User-Agent": [
-            "HTTPie/3.2.4"
-        ]
-    },
-    "host": "localhost:8443",
-    "method": "GET",
-    "proto": "HTTP/1.1",
-    "remote": "[::1]:57961",
-    "tls": {
-        "alpn_negotiated_protocol": "http/1.1",
-        "cipher_suite": "TLS_AES_128_GCM_SHA256",
-        "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBRTCB7aADAgECAggYXbRNl099CjAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMBExDzANBgNVBAMTBmNs\naWVudDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPhO4qIu71Cm5Ox5U5Pb6Og2\n4EMh/lWU4+OGDBkHIRXtyKTZCXzH5a1vQ0TO1jq6sjShZR8ihDYXRuPfcNVefj6j\nMzAxMA4GA1UdDwEB/wQEAwIFoDAfBgNVHSMEGDAWgBQGgzaN2tRzErVZCEe7Ucju\nTY5XBzAKBggqhkjOPQQDAgNHADBEAiB+Oc4DPody43cZ0e+MY7F63DnIPM5xtgwR\nG6IYdhXiAwIgYxOlBxxupGDvvhXyS7IV8KadGD8LVm8G059OJC9vIG0=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUTCB+KADAgECAggYXbRNlzUisDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMA0xCzAJBgNVBAMTAmNh\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFWG+fC3bE4X0oOHIGbH0d1VY1vQc\nDeu/ey1+bCXTsyFLld8rwk5KDjPGI+QGlL5lnEVYWZUQ8QQLYQLhK//uKKNCMEAw\nDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFAaDNo3a\n1HMStVkIR7tRyO5NjlcHMAoGCCqGSM49BAMCA0gAMEUCIAJLtjBdGvDYO18xZ2wI\nJYyzoxN8K4I5VodVwuF/4J5cAiEAmMeY8VbFFKBRLJhnd2wPHaK3pbbMozJ99nSC\nI2xUCvs=\n-----END CERTIFICATE-----\n",
-        "peer_certificates_decoded": [
-            {
-                "issuer": "CN=ca",
-                "not_after": "2026-08-21T06:27:55Z",
-                "not_before": "2025-08-21T06:27:55Z",
-                "serial_number": "1755757675088411914",
-                "subject": "CN=client"
-            },
-            {
-                "issuer": "CN=ca",
-                "not_after": "2026-08-21T06:27:55Z",
-                "not_before": "2025-08-21T06:27:55Z",
-                "serial_number": "1755757675086684848",
-                "subject": "CN=ca"
-            }
-        ],
-        "version": "TLS 1.3"
-    },
-    "url": "/foobar"
+  "content_length": 0,
+  "headers": {
+    "Accept": ["*/*"],
+    "Accept-Encoding": ["gzip, deflate"],
+    "Connection": ["keep-alive"],
+    "User-Agent": ["HTTPie/3.2.4"]
+  },
+  "host": "localhost:8443",
+  "method": "GET",
+  "proto": "HTTP/1.1",
+  "remote": "[::1]:57961",
+  "tls": {
+    "alpn_negotiated_protocol": "http/1.1",
+    "cipher_suite": "TLS_AES_128_GCM_SHA256",
+    "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBRTCB7aADAgECAggYXbRNl099CjAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMBExDzANBgNVBAMTBmNs\naWVudDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPhO4qIu71Cm5Ox5U5Pb6Og2\n4EMh/lWU4+OGDBkHIRXtyKTZCXzH5a1vQ0TO1jq6sjShZR8ihDYXRuPfcNVefj6j\nMzAxMA4GA1UdDwEB/wQEAwIFoDAfBgNVHSMEGDAWgBQGgzaN2tRzErVZCEe7Ucju\nTY5XBzAKBggqhkjOPQQDAgNHADBEAiB+Oc4DPody43cZ0e+MY7F63DnIPM5xtgwR\nG6IYdhXiAwIgYxOlBxxupGDvvhXyS7IV8KadGD8LVm8G059OJC9vIG0=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUTCB+KADAgECAggYXbRNlzUisDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMA0xCzAJBgNVBAMTAmNh\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFWG+fC3bE4X0oOHIGbH0d1VY1vQc\nDeu/ey1+bCXTsyFLld8rwk5KDjPGI+QGlL5lnEVYWZUQ8QQLYQLhK//uKKNCMEAw\nDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFAaDNo3a\n1HMStVkIR7tRyO5NjlcHMAoGCCqGSM49BAMCA0gAMEUCIAJLtjBdGvDYO18xZ2wI\nJYyzoxN8K4I5VodVwuF/4J5cAiEAmMeY8VbFFKBRLJhnd2wPHaK3pbbMozJ99nSC\nI2xUCvs=\n-----END CERTIFICATE-----\n",
+    "peer_certificates_decoded": [
+      {
+        "issuer": "CN=ca",
+        "not_after": "2026-08-21T06:27:55Z",
+        "not_before": "2025-08-21T06:27:55Z",
+        "serial_number": "1755757675088411914",
+        "subject": "CN=client"
+      },
+      {
+        "issuer": "CN=ca",
+        "not_after": "2026-08-21T06:27:55Z",
+        "not_before": "2025-08-21T06:27:55Z",
+        "serial_number": "1755757675086684848",
+        "subject": "CN=ca"
+      }
+    ],
+    "server_name": "localhost",
+    "version": "TLS 1.3"
+  },
+  "url": "/foobar"
 }
 ```
 
@@ -418,29 +410,26 @@ $ http --download http://localhost:8080/download?bytes=10M\&throttle=1M --output
 
 This endpoint provides Prometheus-compatible metrics for monitoring the server.
 
-The following metrics are available for the server:
+The following metrics are available:
 
-| Metric Name                     | Description                                                                |
-| ------------------------------- | -------------------------------------------------------------------------- |
-| `http_requests_total`           | Total number of HTTP requests received.                                    |
-| `http_request_duration_seconds` | Duration of HTTP requests in seconds.                                      |
-| `http_concurrent_requests`      | Current number of concurrent HTTP requests being handled.                  |
-| `http_connections_by_state`     | Current number of connections in each state (new, active, idle, hijacked). |
-| `http_response_size_bytes`      | Size of HTTP responses in bytes.                                           |
-| `http_request_size_bytes`       | Size of HTTP requests in bytes.                                            |
-| `http_errors_total`             | Total number of HTTP errors encountered.                                   |
-| `server_uptime_seconds`         | Total uptime of the server in seconds.                                     |
+| Metric Name                      | Description                                                                |
+| -------------------------------- | -------------------------------------------------------------------------- |
+| `http_requests_total`            | Total number of HTTP requests received.                                    |
+| `http_request_duration_seconds`  | Duration of HTTP requests in seconds. q                                    |
+| `http_concurrent_requests`       | Current number of concurrent HTTP requests being handled.                  |
+| `http_connections_by_state`      | Current number of connections in each state (new, active, idle, hijacked). |
+| `http_response_size_bytes`       | Size of HTTP responses in bytes.                                           |
+| `http_request_size_bytes`        | Size of HTTP requests in bytes.                                            |
+| `http_errors_total`              | Total number of HTTP errors encountered.                                   |
+| `server_uptime_seconds`          | Total uptime of the server in seconds.                                     |
+| `grpc_server_handled_total`      | Total number of gRPC requests handled.                                     |
+| `grpc_server_msg_received_total` | Total number of gRPC messages received.                                    |
+| `grpc_server_msg_sent_total`     | Total number of gRPC messages sent.                                        |
+| `grpc_server_started_total`      | Total number of gRPC requests started.                                     |
 
-Additionally, the prometheus client library provides default Go runtime metrics such as `go_goroutines`, `go_threads`.
+Additionally, the Prometheus client exposes default Go runtime metrics via the Go collector, including metrics like `go_goroutines` and `go_threads`. For more details, see the [go_collector.go](https://github.com/prometheus/client_golang/blob/main/prometheus/go_collector.go) in the Prometheus Go client.
 
-[go-grpc-middleware](https://github.com/grpc-ecosystem/go-grpc-middleware) provides following metrics
-
-| Metric Name                      | Description                             |
-| -------------------------------- | --------------------------------------- |
-| `grpc_server_handled_total`      | Total number of gRPC requests handled.  |
-| `grpc_server_msg_received_total` | Total number of gRPC messages received. |
-| `grpc_server_msg_sent_total`     | Total number of gRPC messages sent.     |
-| `grpc_server_started_total`      | Total number of gRPC requests started.  |
+Grpc metrics are provided by [go-grpc-middleware](https://github.com/grpc-ecosystem/go-grpc-middleware).
 
 ##### Responses
 
@@ -486,24 +475,16 @@ $ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key tes
   "message": "Hello",
   "headers": {
     ":authority": {
-      "values": [
-        "localhost:8443"
-      ]
+      "values": ["localhost:8443"]
     },
     "content-type": {
-      "values": [
-        "application/grpc"
-      ]
+      "values": ["application/grpc"]
     },
     "grpc-accept-encoding": {
-      "values": [
-        "gzip"
-      ]
+      "values": ["gzip"]
     },
     "user-agent": {
-      "values": [
-        "grpcurl/dev-build (no version set) grpc-go/1.61.0"
-      ]
+      "values": ["grpcurl/dev-build (no version set) grpc-go/1.61.0"]
     }
   },
   "remoteAddr": "127.0.0.1:57270",
@@ -519,7 +500,8 @@ $ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key tes
         "notBefore": "2025-08-21T06:27:55Z",
         "notAfter": "2026-08-21T06:27:55Z"
       }
-    ]
+    ],
+    "serverName": "localhost"
   }
 }
 ```
@@ -535,24 +517,16 @@ $ grpcurl -plaintext -d '{"message": "Hello"}' localhost:8080 echo.EchoService/E
   "message": "Hello",
   "headers": {
     ":authority": {
-      "values": [
-        "localhost:8080"
-      ]
+      "values": ["localhost:8080"]
     },
     "content-type": {
-      "values": [
-        "application/grpc"
-      ]
+      "values": ["application/grpc"]
     },
     "grpc-accept-encoding": {
-      "values": [
-        "gzip"
-      ]
+      "values": ["gzip"]
     },
     "user-agent": {
-      "values": [
-        "grpcurl/dev-build (no version set) grpc-go/1.61.0"
-      ]
+      "values": ["grpcurl/dev-build (no version set) grpc-go/1.61.0"]
     }
   },
   "remoteAddr": "127.0.0.1:60740"
