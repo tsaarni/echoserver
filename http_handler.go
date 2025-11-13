@@ -180,6 +180,7 @@ func (h *HTTPHandler) decodeTLSInfo(r *http.Request, info map[string]any) {
 		"peer_certificates":         clientCerts,
 		"peer_certificates_decoded": clientCertDecoded,
 		"server_name":               r.TLS.ServerName,
+		"key_exchange":              r.TLS.CurveID.String(),
 	}
 }
 

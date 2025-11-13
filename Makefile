@@ -12,7 +12,7 @@ clean:
 lint: lint-go lint-js lint-html
 
 lint-go:
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.4.0 run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.1 run
 
 lint-js:
 	npx eslint .

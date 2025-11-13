@@ -1,6 +1,6 @@
 module github.com/tsaarni/echoserver
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0

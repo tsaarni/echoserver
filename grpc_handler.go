@@ -66,6 +66,7 @@ func (s *grpcEchoService) Echo(ctx context.Context, req *pb.EchoRequest) (*pb.Ec
 			CipherSuite:            tls.CipherSuiteName(state.CipherSuite),
 			AlpnNegotiatedProtocol: state.NegotiatedProtocol,
 			ServerName:             state.ServerName,
+			KeyExchange:            state.CurveID.String(),
 		}
 
 		for _, cert := range state.PeerCertificates {

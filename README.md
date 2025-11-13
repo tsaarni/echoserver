@@ -84,6 +84,8 @@ Following fields is included in the response:
     - `not_before`: Not before date of the certificate.
     - `not_after`: Not after date of the certificate.
   - `version`: TLS version.
+  - `server_name`: Server name indicated by the client (SNI).
+  - `key_exchange`: Key exchange mechanism.
 - `query`: Query parameters of the request if the URL contains a query string.
 - `form`: Form parameters of the request body, if the content type is `application/x-www-form-urlencoded`.
 - `cookies`: Cookies in the request if the request had a `Cookie` header.
@@ -107,17 +109,18 @@ $ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem
   "content_length": 0,
   "headers": {
     "Accept": ["*/*"],
-    "Accept-Encoding": ["gzip, deflate"],
+    "Accept-Encoding": ["gzip, deflate, br"],
     "Connection": ["keep-alive"],
-    "User-Agent": ["HTTPie/3.2.4"]
+    "User-Agent": ["HTTPie/3.2.2"]
   },
   "host": "localhost:8443",
   "method": "GET",
   "proto": "HTTP/1.1",
-  "remote": "[::1]:57961",
+  "remote": "127.0.0.1:35248",
   "tls": {
     "alpn_negotiated_protocol": "http/1.1",
     "cipher_suite": "TLS_AES_128_GCM_SHA256",
+    "key_exchange": "X25519",
     "peer_certificates": "-----BEGIN CERTIFICATE-----\nMIIBRTCB7aADAgECAggYXbRNl099CjAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMBExDzANBgNVBAMTBmNs\naWVudDBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPhO4qIu71Cm5Ox5U5Pb6Og2\n4EMh/lWU4+OGDBkHIRXtyKTZCXzH5a1vQ0TO1jq6sjShZR8ihDYXRuPfcNVefj6j\nMzAxMA4GA1UdDwEB/wQEAwIFoDAfBgNVHSMEGDAWgBQGgzaN2tRzErVZCEe7Ucju\nTY5XBzAKBggqhkjOPQQDAgNHADBEAiB+Oc4DPody43cZ0e+MY7F63DnIPM5xtgwR\nG6IYdhXiAwIgYxOlBxxupGDvvhXyS7IV8KadGD8LVm8G059OJC9vIG0=\n-----END CERTIFICATE-----\n-----BEGIN CERTIFICATE-----\nMIIBUTCB+KADAgECAggYXbRNlzUisDAKBggqhkjOPQQDAjANMQswCQYDVQQDEwJj\nYTAeFw0yNTA4MjEwNjI3NTVaFw0yNjA4MjEwNjI3NTVaMA0xCzAJBgNVBAMTAmNh\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEFWG+fC3bE4X0oOHIGbH0d1VY1vQc\nDeu/ey1+bCXTsyFLld8rwk5KDjPGI+QGlL5lnEVYWZUQ8QQLYQLhK//uKKNCMEAw\nDgYDVR0PAQH/BAQDAgEGMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFAaDNo3a\n1HMStVkIR7tRyO5NjlcHMAoGCCqGSM49BAMCA0gAMEUCIAJLtjBdGvDYO18xZ2wI\nJYyzoxN8K4I5VodVwuF/4J5cAiEAmMeY8VbFFKBRLJhnd2wPHaK3pbbMozJ99nSC\nI2xUCvs=\n-----END CERTIFICATE-----\n",
     "peer_certificates_decoded": [
       {
@@ -487,7 +490,7 @@ $ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key tes
       "values": ["grpcurl/dev-build (no version set) grpc-go/1.61.0"]
     }
   },
-  "remoteAddr": "127.0.0.1:57270",
+  "remoteAddr": "127.0.0.1:47780",
   "tlsInfo": {
     "version": "TLS 1.3",
     "cipherSuite": "TLS_AES_128_GCM_SHA256",
@@ -501,7 +504,8 @@ $ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key tes
         "notAfter": "2026-08-21T06:27:55Z"
       }
     ],
-    "serverName": "localhost"
+    "serverName": "localhost",
+    "keyExchange": "X25519"
   }
 }
 ```
