@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"mime"
 	"net/http"
 	"os"
 	"strings"
@@ -209,6 +210,7 @@ func main() {
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		contentType := r.Header.Get("Content-Type")
+		contentType, _, _ = mime.ParseMediaType(contentType)
 		if strings.HasPrefix(contentType, "application/grpc") {
 			grpcService.ServeHTTP(w, r)
 		} else {

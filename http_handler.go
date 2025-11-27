@@ -144,7 +144,9 @@ func (h *HTTPHandler) collectRequestInfo(r *http.Request) map[string]any {
 }
 
 func (h *HTTPHandler) processRequestBody(r *http.Request, body []byte, info map[string]any) {
-	if r.Header.Get("Content-Type") == "application/x-www-form-urlencoded" {
+	contentType := r.Header.Get("Content-Type")
+	contentType, _, _ = mime.ParseMediaType(contentType)
+	if contentType == "application/x-www-form-urlencoded" {
 		values, err := url.ParseQuery(string(body))
 		if err == nil {
 			info["form"] = values
