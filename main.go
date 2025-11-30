@@ -1,18 +1,17 @@
 package main
 
 import (
-	"crypto/tls"
 	"embed"
 	"flag"
 	"fmt"
-	"io"
 	"io/fs"
 	"log/slog"
-	"mime"
-	"net/http"
 	"os"
+	"os/signal"
 	"strings"
-	"time"
+	"syscall"
+
+	"github.com/tsaarni/echoserver/server"
 )
 
 const (
@@ -115,69 +114,6 @@ func setupFilesystem(live bool) {
 	}
 }
 
-func startHTTPServer(addr string) {
-	var protocols http.Protocols
-	protocols.SetHTTP1(true)
-	protocols.SetHTTP2(true)
-	protocols.SetUnencryptedHTTP2(true)
-
-	server := &http.Server{
-		Addr:              addr,
-		ReadHeaderTimeout: time.Duration(5) * time.Second,
-		Protocols:         &protocols,
-		ConnState:         connStateMetrics,
-	}
-	slog.Info("Server is running in HTTP mode", "address", server.Addr)
-	err := server.ListenAndServe()
-	if err != nil {
-		slog.Error("Error starting HTTP server", "error", err)
-	}
-}
-
-func startHTTPSServer(addr string, certFile, keyFile string, keyLogFile string) {
-	lookupCert := func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
-		cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-		if err != nil {
-			slog.Error("Error loading certificate", "error", err)
-			return nil, err
-		}
-		return &cert, nil
-	}
-
-	// Call lookupCert to check if the certificate and key files are valid.
-	_, err := lookupCert(nil)
-	if err != nil {
-		os.Exit(1)
-	}
-
-	var keyLogWriter io.Writer
-	if keyLogFile != "" {
-		keyLogWriter, err = os.OpenFile(keyLogFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0o600)
-		if err != nil {
-			slog.Error("Error opening key log file", "error", err)
-			os.Exit(1)
-		}
-		slog.Info("Enabling TLS master secret logging", "SSLKEYLOGFILE", keyLogFile)
-	}
-
-	server := &http.Server{
-		Addr:              addr,
-		ReadHeaderTimeout: time.Duration(5) * time.Second,
-		ConnState:         connStateMetrics,
-	}
-	server.TLSConfig = &tls.Config{ // #nosec // G402: TLS MinVersion too low.
-		ClientAuth:     tls.RequestClientCert,
-		GetCertificate: lookupCert,
-		KeyLogWriter:   keyLogWriter,
-	}
-	slog.Info("Server is running in HTTPS mode", "address", server.Addr,
-		"tls_cert_file", certFile, "tls_key_file", keyFile)
-	err = server.ListenAndServeTLS("", "")
-	if err != nil {
-		slog.Error("Error starting HTTPS server", "error", err)
-	}
-}
-
 // parseEnvContext reads environment variables that start with "ENV_" and stores them to be used
 // as context info in the echo response.
 func parseEnvContext() {
@@ -205,26 +141,17 @@ func main() {
 	setupFilesystem(config.Live)
 	parseEnvContext()
 
-	httpHandler := newHTTPHandler(files, envContext)
-	grpcService := newGRPCEchoService(envContext)
-
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		contentType := r.Header.Get("Content-Type")
-		contentType, _, _ = mime.ParseMediaType(contentType)
-		if strings.HasPrefix(contentType, "application/grpc") {
-			grpcService.ServeHTTP(w, r)
-		} else {
-			httpHandler.ServeHTTP(w, r)
-		}
-	})
-
-	http.Handle("/", metricsMiddleware(handler))
-
-	if config.CertFile != "" && config.KeyFile != "" {
-		go startHTTPSServer(config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
+	stop, err := server.Start(files, envContext, config.HTTPAddr, config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
+	if err != nil {
+		slog.Error("Failed to start servers", "error", err)
+		os.Exit(1)
 	}
 
-	go startHTTPServer(config.HTTPAddr)
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
-	select {}
+	// Block until a signal is received.
+	sig := <-sigCh
+	slog.Info("Signal received, shutting down server", "signal", sig)
+	stop()
 }

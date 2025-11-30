@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -22,7 +22,7 @@ type grpcEchoService struct {
 	envContext map[string]string
 }
 
-func newGRPCEchoService(envContext map[string]string) *grpc.Server {
+func NewGRPCEchoService(envContext map[string]string) *grpc.Server {
 	echoService := &grpcEchoService{
 		envContext: envContext,
 	}

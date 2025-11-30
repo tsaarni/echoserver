@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bytes"
@@ -44,7 +44,7 @@ type HTTPHandler struct {
 // statusCode holds the persisted HTTP status code for /status responses.
 var statusCode int32 = http.StatusOK
 
-func newHTTPHandler(files fs.FS, envContext map[string]string) *HTTPHandler {
+func NewHTTPHandler(files fs.FS, envContext map[string]string) *HTTPHandler {
 	return &HTTPHandler{
 		files:      files,
 		envContext: envContext,
@@ -446,7 +446,7 @@ func (h *HTTPHandler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Connection") != "Upgrade" {
+	if !strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade") {
 		slog.Warn("Invalid connection header")
 		http.Error(w, "Invalid connection header", http.StatusBadRequest)
 		return

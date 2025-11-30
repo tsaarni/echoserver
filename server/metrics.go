@@ -1,6 +1,8 @@
-package main
+package server
 
 import (
+	"bufio"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
@@ -89,7 +91,7 @@ var (
 )
 
 // connStateMetrics tracks connection state changes for metrics.
-func connStateMetrics(conn net.Conn, state http.ConnState) {
+func ConnStateMetrics(conn net.Conn, state http.ConnState) {
 	connStateMu.Lock()
 	defer connStateMu.Unlock()
 
@@ -114,7 +116,7 @@ func connStateMetrics(conn net.Conn, state http.ConnState) {
 }
 
 // metricsMiddleware records metrics for HTTP requests.
-func metricsMiddleware(next http.Handler) http.Handler {
+func MetricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		method := r.Method
@@ -161,4 +163,11 @@ func (rw *responseWriterWrapper) Flush() {
 	if flusher, ok := rw.ResponseWriter.(http.Flusher); ok {
 		flusher.Flush()
 	}
+}
+
+func (rw *responseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	if hj, ok := rw.ResponseWriter.(http.Hijacker); ok {
+		return hj.Hijack()
+	}
+	return nil, nil, fmt.Errorf("hijack not supported")
 }
