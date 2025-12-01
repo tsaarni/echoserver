@@ -30,7 +30,7 @@ jobs:
       - name: Build and Push to GHCR
         run: |
           docker buildx build \
-            --platform linux/amd64 \
+            --platform linux/amd64,linux/arm64 \
             --tag ghcr.io/$GITHUB_REPOSITORY:latest \
             --push \
             .
