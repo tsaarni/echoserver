@@ -4,11 +4,10 @@ This guide is for those who wish to contribute to the project.
 
 ## Development
 
-To build and run the echoserver locally, use the following commands:
+To build echoserver locally, use the following commands:
 
 ```sh
 make
-./echoserver
 ```
 
 To serve HTML files from the filesystem instead of using bundled files, use the
@@ -16,6 +15,22 @@ following command:
 
 ```sh
 ./echoserver -live
+```
+
+As an alternative, you can build the project, generate test certificates, and run echoserver in both HTTP and HTTPS modes using the following `Makefile` target:
+
+```sh
+make run
+```
+
+```sh
+make run
+```
+
+To run test suite, use the following command:
+
+```sh
+make test
 ```
 
 To build the container image, use the following command:
@@ -59,3 +74,27 @@ Keycloak has been configured with the following clients:
 - echoserver-public-dpop
 
 The latter one is configured to require [DPoP](https://datatracker.ietf.org/doc/html/rfc9449).
+
+### Protobuf Code Generation
+
+To generate protobuf code, ensure you have `protoc` and Go protobuf plugins installed.
+Then run:
+
+```sh
+make generate-proto
+```
+
+### Vscode
+
+To develop test cases for echoserver, use the e2e build tag in your VSCode settings:
+
+```sh
+mkdir -p .vscode
+cat > .vscode/settings.json <<EOL
+{
+    "go.buildTags": "e2e"
+}
+EOL
+```
+
+This will ensure that the e2e code will be included in build by the VSCode Go extension.

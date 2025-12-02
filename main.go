@@ -141,7 +141,7 @@ func main() {
 	setupFilesystem(config.Live)
 	parseEnvContext()
 
-	stop, err := server.Start(files, envContext, config.HTTPAddr, config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
+	stop, errChan, err := server.Start(files, envContext, config.HTTPAddr, config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
 	if err != nil {
 		slog.Error("Failed to start servers", "error", err)
 		os.Exit(1)
@@ -150,8 +150,12 @@ func main() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
 
-	// Block until a signal is received.
-	sig := <-sigCh
-	slog.Info("Signal received, shutting down server", "signal", sig)
-	stop()
+	// Block until a signal is received or an error occurs.
+	select {
+	case <-errChan:
+		slog.Error("Server error, shutting down")
+	case sig := <-sigCh:
+		slog.Info("Signal received, shutting down", "signal", sig)
+		stop()
+	}
 }

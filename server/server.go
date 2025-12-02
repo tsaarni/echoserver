@@ -15,7 +15,7 @@ import (
 )
 
 // Start starts HTTP and HTTPS servers.
-func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certFile, keyFile, keyLogFile string) (func(), error) {
+func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certFile, keyFile, keyLogFile string) (func(), chan error, error) {
 	handler := createMuxHandler(files, envContext)
 
 	wrappedHandler := MetricsMiddleware(handler)
@@ -23,8 +23,10 @@ func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certF
 	httpServer := newHTTPServer(httpAddr, wrappedHandler)
 	httpsServer, err := newHTTPSServer(httpsAddr, certFile, keyFile, keyLogFile, wrappedHandler)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+
+	errChannel := make(chan error, 1)
 
 	// Start servers.
 	if httpAddr != "" {
@@ -32,6 +34,7 @@ func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certF
 			slog.Info("Server is running in HTTP mode", "address", httpAddr)
 			if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				slog.Error("HTTP server error", "error", err)
+				errChannel <- err
 			}
 		}()
 	}
@@ -42,6 +45,7 @@ func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certF
 				"tls_cert_file", certFile, "tls_key_file", keyFile)
 			if err := httpsServer.ListenAndServeTLS(certFile, keyFile); err != nil && err != http.ErrServerClosed {
 				slog.Error("HTTPS server error", "error", err)
+				errChannel <- err
 			}
 		}()
 	}
@@ -57,7 +61,7 @@ func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certF
 		}
 	}
 
-	return stop, nil
+	return stop, errChannel, nil
 }
 
 func createMuxHandler(files fs.FS, envContext map[string]string) http.Handler {

@@ -101,7 +101,7 @@ Following fields is included in the response:
 ##### Example
 
 ```console
-$ http --cert testdata/certs/client.pem --cert-key testdata/certs/client-key.pem --verify testdata/certs/ca.pem https://localhost:8443/foobar
+$ http --cert test/testdata/certs/client.pem --cert-key test/testdata/certs/client-key.pem --verify test/testdata/certs/ca.pem https://localhost:8443/foobar
 ```
 
 ```json
@@ -470,7 +470,7 @@ The service supports gRPC reflection.
 To call the Echo method over HTTP/2:
 
 ```sh
-$ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key testdata/certs/client-key.pem -d '{"message": "Hello"}' localhost:8443 echo.EchoService/Echo
+$ grpcurl -cacert test/testdata/certs/ca.pem -cert test/testdata/certs/client.pem -key test/testdata/certs/client-key.pem -d '{"message": "Hello"}' localhost:8443 echo.EchoService/Echo
 ```
 
 ```json
@@ -552,7 +552,7 @@ The service supports gRPC reflection.
 ##### Example
 
 ```sh
-$ grpcurl -cacert testdata/certs/ca.pem -cert testdata/certs/client.pem -key testdata/certs/client-key.pem -emit-defaults -d '{"start": 2}' localhost:8443 echo.EchoService/EchoCountdown
+$ grpcurl -cacert test/testdata/certs/ca.pem -cert test/testdata/certs/client.pem -key test/testdata/certs/client-key.pem -emit-defaults -d '{"start": 2}' localhost:8443 echo.EchoService/EchoCountdown
 {
   "count": 2
 }
