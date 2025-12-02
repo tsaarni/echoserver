@@ -6,7 +6,7 @@ services:
     command:
       - -cxe
       - |
-        /opt/keycloak/bin/kc.sh import --verbose --file=/input/testdata/keycloak-realm.json
+        /opt/keycloak/bin/kc.sh import --verbose --file=/input/test/testdata/keycloak-realm.json
         /opt/keycloak/bin/kc.sh start --features=dpop
 
     environment:
@@ -25,7 +25,7 @@ services:
   envoy:
     image: envoyproxy/envoy:v1.31-latest
 #    image: envoyproxy/envoy:dev
-    command: --log-level info --config-path /input/testdata/envoy/envoy-config.yaml
+    command: --log-level info --config-path /input/test/testdata/envoy/envoy-config.yaml
     ports:
       - '127.0.0.1:443:8080'
     user: '1000:1000'

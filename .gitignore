@@ -30,3 +30,5 @@ node_modules
 certs/
 
 echoserver
+
+coverage-e2e.html

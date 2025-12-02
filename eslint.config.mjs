@@ -20,7 +20,7 @@ export default [
   },
   pluginJs.configs.recommended,
   {
-    files: ['**/*.html'],
+    files: ['apps/*.html'],
     plugins: { pluginHtml }
   },
 ];
