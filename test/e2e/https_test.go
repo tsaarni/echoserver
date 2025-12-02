@@ -10,8 +10,9 @@ func (s *E2ETestSuite) TestHTTPSEcho() {
 	resp, err := s.makeHTTPSRequestWithClientCert("GET", "/test", nil)
 	s.Require().NoError(err)
 	defer resp.Body.Close()
-
 	s.Equal(http.StatusOK, resp.StatusCode)
+
+	// Validate only TLS-related fields in the response.
 	s.validateWithSchema(resp, `{
 			"$schema": "http://json-schema.org/draft-07/schema#",
 			"type": "object",

@@ -15,12 +15,19 @@ import (
 
 func (s *E2ETestSuite) TestHTTPEcho() {
 	req, err := http.NewRequest("GET", "http://localhost:8080/test", nil)
+	client := &http.Client{
+		Transport: &http.Transport{
+			ForceAttemptHTTP2: false,
+		},
+	}
 	s.Require().NoError(err)
 	req.Header.Set("Cookie", "sessionid=abc123")
-	resp, err := s.httpClient.Do(req)
+	req.Header.Set("X-E2e-Test", "yes")
+	resp, err := client.Do(req)
 	s.Require().NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
+
 	s.validateWithSchema(resp, `{
 		       "$schema": "http://json-schema.org/draft-07/schema#",
 		       "type": "object",
@@ -46,10 +53,11 @@ func (s *E2ETestSuite) TestHTTPEcho() {
 				       "type": "object",
 				       "properties": {
 					       "Accept-Encoding": {"type":"array","items":{"type":"string"}},
-					       "Cookie": {"type":"array","items":{"type":"string","pattern":"^sessionid=abc123$"}},
-					       "User-Agent": {"type":"array","items":{"type":"string","pattern":"^Go-http-client/.*"}}
+					       "Cookie": {"type":"array","items":{"type":"string","const":"sessionid=abc123"}},
+					       "User-Agent": {"type":"array","items":{"type":"string","pattern":"^Go-http-client/.*"}},
+						   "X-E2e-Test": {"type":"array","items":{"type":"string","const":"yes"}}
 				       },
-				       "required": ["Accept-Encoding","Cookie","User-Agent"],
+				       "required": ["Accept-Encoding","Cookie","User-Agent","X-E2e-Test"],
 				       "additionalProperties": false
 			       },
 			       "host": {"type": "string", "const": "localhost:8080"},
