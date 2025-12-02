@@ -72,7 +72,7 @@ func (s *E2ETestSuite) TestHTTPEcho() {
 }
 
 func (s *E2ETestSuite) TestFormProcessing() {
-	body := strings.NewReader("foo=bar&baz=qux")
+	body := strings.NewReader("key1=value1&key2=value2")
 	req, err := http.NewRequest("POST", fmt.Sprintf("http://%s/test", httpAddr), body)
 	s.Require().NoError(err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -82,6 +82,9 @@ func (s *E2ETestSuite) TestFormProcessing() {
 	var data map[string]interface{}
 	s.NoError(json.NewDecoder(resp.Body).Decode(&data))
 	s.Contains(data, "form")
+	form := data["form"].(map[string]interface{})
+	s.Equal("value1", form["key1"].([]interface{})[0])
+	s.Equal("value2", form["key2"].([]interface{})[0])
 }
 
 func (s *E2ETestSuite) TestHTTPSetStatus() {
