@@ -23,10 +23,6 @@ As an alternative, you can build the project, generate test certificates, and ru
 make run
 ```
 
-```sh
-make run
-```
-
 To run test suite, use the following command:
 
 ```sh
