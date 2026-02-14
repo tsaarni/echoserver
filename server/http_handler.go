@@ -388,6 +388,12 @@ func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", contentType)
 
+	// For non-text files, serve them directly without template processing.
+	if !strings.HasPrefix(contentType, "text/") {
+		http.ServeFileFS(w, r, h.files, relativePath)
+		return
+	}
+
 	tmpl, err := template.ParseFS(h.files, relativePath)
 	if err != nil {
 		slog.Error("Error parsing template", "error", err)

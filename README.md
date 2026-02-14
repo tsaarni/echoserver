@@ -1,4 +1,5 @@
-# Echoserver
+![Logo Light](./apps/echoserver-light.png#gh-light-mode-only)
+![Logo Dark](./apps/echoserver-dark.png#gh-dark-mode-only)
 
 Echoserver is a simple HTTP server that listens on incoming requests and echoes back
 information about the request. It is inspired by the
