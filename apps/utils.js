@@ -71,4 +71,34 @@ class PersistentValues {
   }
 }
 
-export { PersistentValues };
+function initTheme() {
+  const key = 'theme';
+  const prefersDark = globalThis.matchMedia('(prefers-color-scheme: dark)').matches;
+  let currentTheme = localStorage.getItem(key) || (prefersDark ? 'dark' : 'light');
+
+  const applyTheme = (theme) => {
+    document.documentElement.dataset.theme = theme;
+    const logo = document.querySelector('img[src*="echoserver-"]');
+    if (logo) {
+      logo.src = logo.src.replace(/echoserver-(light|dark)\.png/, `echoserver-${theme}.png`);
+    }
+  };
+
+  applyTheme(currentTheme);
+
+  const btn = document.createElement('button');
+  btn.className = 'theme-toggle';
+  btn.textContent = currentTheme === 'dark' ? '☀︎' : '☾︎';
+  btn.title = 'Toggle dark mode';
+
+  btn.addEventListener('click', () => {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    applyTheme(currentTheme);
+    localStorage.setItem(key, currentTheme);
+    btn.textContent = currentTheme === 'dark' ? '☀︎' : '☾︎';
+  });
+
+  document.body.appendChild(btn);
+}
+
+export { PersistentValues, initTheme };

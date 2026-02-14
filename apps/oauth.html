@@ -59,7 +59,9 @@
     <script type="module">
       import { OAuth, tokenStringify } from './oauth.js';
       import { Logger } from './logger.js';
-      import { PersistentValues } from './utils.js';
+      import { PersistentValues, initTheme } from './utils.js';
+
+      initTheme();
 
       const log = new Logger(document.getElementById('logs'));
 

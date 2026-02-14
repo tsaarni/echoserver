@@ -38,6 +38,9 @@
 
     <script type="module">
       import { Logger } from './logger.js';
+      import { initTheme } from './utils.js';
+
+      initTheme();
 
       const log = new Logger(document.getElementById('logs'));
 

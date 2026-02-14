@@ -51,7 +51,9 @@
       import Keycloak from 'https://cdn.jsdelivr.net/npm/keycloak-js@26.0.7/+esm';
       import { Logger } from './logger.js';
       import { tokenStringify } from './oauth.js';
-      import { PersistentValues } from './utils.js';
+      import { PersistentValues, initTheme } from './utils.js';
+
+      initTheme();
 
       const log = new Logger(document.getElementById('logs'));
 
