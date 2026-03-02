@@ -202,7 +202,7 @@ class OAuth {
       }
       return response.json();
     } catch (error) {
-      throw new Error(`Failed to fetch well-known configuration: ${this.#wellKnownEndpoint}: ${error}`);
+      throw new Error(`Failed to fetch well-known configuration: ${this.#wellKnownEndpoint}`, { cause: error });
     }
   }
 
