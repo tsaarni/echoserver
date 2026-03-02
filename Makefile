@@ -12,7 +12,7 @@ clean: ## Clean up build artifacts.
 lint: lint-go lint-js lint-html  ## Run all linters.
 
 lint-go: ## Run golangci-lint.
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.6.1 run
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1 run
 
 lint-js: ## Run ESLint.
 	npx eslint .
@@ -22,7 +22,7 @@ lint-html: ## Run HTMLHint.
 
 generate-test-certs: ## Generate test certificates.
 	@mkdir -p test/testdata/certs
-	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.10.0 -d test/testdata/certs test/testdata/certs.yaml
+	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.11.0 -d test/testdata/certs test/testdata/certs.yaml
 
 generate-proto: ## Generate gRPC Go code from proto files.
 	protoc --go_out=. --go_opt=paths=source_relative \

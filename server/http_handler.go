@@ -26,11 +26,11 @@ import (
 )
 
 // patternByteReader implements io.Reader, returning a repeating pattern of bytes 0..255.
-type patternByteReader struct{ pos int }
+type patternByteReader struct{ pos byte }
 
 func (r *patternByteReader) Read(p []byte) (int, error) {
 	for i := range p {
-		p[i] = byte(r.pos % 256)
+		p[i] = r.pos
 		r.pos++
 	}
 	return len(p), nil
@@ -74,6 +74,7 @@ func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // echoHandler gathers information about the incoming request and returns it as a JSON response.
 func (h *HTTPHandler) echoHandler(w http.ResponseWriter, r *http.Request) {
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -84,6 +85,7 @@ func (h *HTTPHandler) echoHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// #nosec G705 // gosec: XSS via taint analysis
 	_, _ = w.Write(jsonData)
 }
 
@@ -170,8 +172,10 @@ func (h *HTTPHandler) decodeTLSInfo(r *http.Request, info map[string]any) {
 	}
 
 	if len(clientCertDecoded) > 0 {
+		// #nosec G706 // gosec: Log injection via taint analysis
 		slog.Debug("TLS info", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite), "peer_certificate_subject", r.TLS.PeerCertificates[0].Subject.String(), "peer_certificate_not_before", r.TLS.PeerCertificates[0].NotBefore, "peer_certificate_not_after", r.TLS.PeerCertificates[0].NotAfter, "peer_certificate_serial_number", r.TLS.PeerCertificates[0].SerialNumber.String())
 	} else {
+		// #nosec G706 // gosec: Log injection via taint analysis
 		slog.Debug("TLS info", "version", tls.VersionName(r.TLS.Version), "cipher_suite", tls.CipherSuiteName(r.TLS.CipherSuite))
 	}
 
@@ -290,6 +294,7 @@ func decodeCookies(cookies []*http.Cookie, info map[string]any) {
 // If a `set` query parameter is provided, it updates the stored status code.
 // For paths like /status/{code}, it responds with the specified status code.
 func (h *HTTPHandler) statusHandler(w http.ResponseWriter, r *http.Request) {
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling status request", "url", r.URL.String())
 
 	var returnCode int64
@@ -301,8 +306,10 @@ func (h *HTTPHandler) statusHandler(w http.ResponseWriter, r *http.Request) {
 			newCode, err := strconv.ParseInt(v, 10, 32)
 			if err == nil && newCode >= 100 && newCode <= 599 {
 				atomic.StoreInt32(&statusCode, int32(newCode))
+				// #nosec G706 // gosec: Log injection via taint analysis
 				slog.Debug("Persisted status code", "code", newCode)
 			} else {
+				// #nosec G706 // gosec: Log injection via taint analysis
 				slog.Warn("Invalid status code provided for set parameter", "value", v, "error", err)
 				http.Error(w, "Invalid status code provided for set parameter. Code must be a 3-digit number between 100 and 599.",
 					http.StatusBadRequest)
@@ -363,10 +370,12 @@ func (h *HTTPHandler) statusHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// #nosec G705 // gosec: XSS via taint analysis
 	_, _ = w.Write(jsonData)
 }
 
 func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling template request", "url", r.URL.String())
 
 	relativePath := strings.TrimPrefix(r.URL.Path, "/apps/")
@@ -410,6 +419,7 @@ func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 
 // serverSentEventHandler implements a long polling server that periodically sends "ping" messages.
 func (h *HTTPHandler) serverSentEventHandler(w http.ResponseWriter, r *http.Request) {
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling stream request", "url", r.URL.String())
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
@@ -444,6 +454,7 @@ func (h *HTTPHandler) serverSentEventHandler(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *HTTPHandler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling websocket request", "url", r.URL.String())
 
 	if r.Header.Get("Upgrade") != "websocket" {
@@ -515,12 +526,17 @@ func (h *HTTPHandler) webSocketHandler(w http.ResponseWriter, r *http.Request) {
 			timestamp := time.Now().Format(time.RFC3339)
 			counter++
 			payload := fmt.Sprintf("{ \"timestamp\": \"%s\", \"counter\": \"%d\" }", timestamp, counter)
-			payloadLen := len(payload)
+			payloadData := []byte(payload)
+			payloadLen := len(payloadData)
+			if payloadLen > 125 {
+				slog.Error("WebSocket payload exceeds short-payload limit (125 bytes)", "payload_len", payloadLen)
+				return
+			}
 
 			frame := make([]byte, payloadLen+2)
-			frame[0] = 0x81             // Text frame.
-			frame[1] = byte(payloadLen) // Payload length.
-			copy(frame[2:], payload)    // Payload data.
+			frame[0] = 0x81              // Text frame.
+			frame[1] = uint8(payloadLen) // Payload length.
+			copy(frame[2:], payloadData) // Payload data.
 
 			_, err := buf.Write(frame)
 			if err != nil {
@@ -570,6 +586,7 @@ func (h *HTTPHandler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Length", strconv.FormatInt(downloadBytes, 10))
 
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling download request", "url", r.URL.String(), "bytes", downloadBytes, "throttle", throttle)
 
 	patternReader := io.LimitReader(&patternByteReader{}, downloadBytes)
@@ -579,10 +596,12 @@ func (h *HTTPHandler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("File download completed", "bytes", downloadBytes)
 }
 
 func (h *HTTPHandler) uploadHandler(w http.ResponseWriter, r *http.Request) {
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling upload request", "url", r.URL.String())
 
 	throttleStr := r.URL.Query().Get("throttle")
@@ -610,7 +629,9 @@ func (h *HTTPHandler) uploadHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error marshaling JSON", http.StatusInternalServerError)
 		return
 	}
+	// #nosec G705 // gosec: XSS via taint analysis
 	_, _ = w.Write(jsonResp)
+	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("File upload completed", "bytes_uploaded", bytesRead)
 }
 

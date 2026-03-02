@@ -49,7 +49,7 @@ func newConfig() *Config {
 	logLevel := flag.String("log-level", "", "Log level (debug, info, warn, error, none)")
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintln(os.Stderr, "Usage:")
 		flag.PrintDefaults()
 		fmt.Fprintf(os.Stderr, "\nEnvironment variables:\n")
 		fmt.Fprintf(os.Stderr, "  HTTP_ADDR\n\tAddress to bind the HTTP server socket\n")
