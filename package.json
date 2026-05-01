@@ -1,9 +1,9 @@
 {
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.1.0",
+    "eslint": "^10.3.0",
     "eslint-plugin-html": "^8.1.4",
-    "globals": "^17.4.0",
+    "globals": "^17.6.0",
     "htmlhint": "^1.9.2"
   }
 }
