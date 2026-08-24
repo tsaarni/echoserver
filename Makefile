@@ -12,7 +12,7 @@ clean: ## Clean up build artifacts.
 lint: lint-go lint-js lint-html  ## Run all linters.
 
 lint-go: ## Run golangci-lint.
-	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.10.1 run
+	go tool -modfile=tools/go.mod golangci-lint run
 
 lint-js: ## Run ESLint.
 	npx eslint .
