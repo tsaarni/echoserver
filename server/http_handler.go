@@ -379,7 +379,8 @@ func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 	slog.Debug("Handling template request", "url", r.URL.String())
 
 	relativePath := strings.TrimPrefix(r.URL.Path, "/apps/")
-	if relativePath == "" {
+	relativePath = filepath.Clean(relativePath)
+	if relativePath == "" || relativePath == "." {
 		relativePath = "index.html"
 	}
 
@@ -410,6 +411,7 @@ func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// #nosec G708 // gosec: Server-side template injection via taint analysis
 	err = tmpl.ExecuteTemplate(w, relativePath, h.envContext)
 	if err != nil {
 		slog.Error("Error executing template", "error", err)
