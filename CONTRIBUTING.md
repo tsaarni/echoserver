@@ -73,8 +73,7 @@ The latter one is configured to require [DPoP](https://datatracker.ietf.org/doc/
 
 ### Protobuf Code Generation
 
-To generate protobuf code, ensure you have `protoc` and Go protobuf plugins installed.
-Then run:
+To generate protobuf code, use the following command:
 
 ```sh
 make generate-proto

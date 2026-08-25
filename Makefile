@@ -25,9 +25,7 @@ generate-test-certs: ## Generate test certificates.
 	go run github.com/tsaarni/certyaml/cmd/certyaml@v0.11.0 -d test/testdata/certs test/testdata/certs.yaml
 
 generate-proto: ## Generate gRPC Go code from proto files.
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		proto/echo.proto
+	go tool -modfile=tools/go.mod buf generate
 
 run: generate-test-certs  ## Run the server.
 	go run . -http-addr 127.0.0.1:8080 -https-addr 127.0.0.1:8443 -live -tls-cert-file test/testdata/certs/echoserver.pem -tls-key-file test/testdata/certs/echoserver-key.pem
