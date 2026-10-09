@@ -36,6 +36,7 @@ Following table lists the available configuration options:
 | `-https-addr`    | `HTTPS_ADDR`    | Address to bind the HTTPS server socket.                                                                               | `:8443` |
 | `-tls-cert-file` | `TLS_CERT_FILE` | Path to TLS certificate file.                                                                                          |         |
 | `-tls-key-file`  | `TLS_KEY_FILE`  | Path to TLS key file.                                                                                                  |         |
+| `-serve`         | `SERVE`         | Serve static files (e.g. `/static/=/var/www`) or a single file (e.g. `/robots.txt=/etc/robots.txt`). Flag is repeatable. Env var is space-separated. |         |
 |                  | `ENV_*`         | List of environment variables to be included in the `env` field of the JSON response and accessible in HTML templates. |         |
 | `-live`          |                 | Serve static files directly from the `./apps` directory instead of using bundled files in the binary.                  | `false` |
 |                  | `SSLKEYLOGFILE` | Path to write the TLS master secret log file to. See [Wireshark documentation][1] for more information.                |         |

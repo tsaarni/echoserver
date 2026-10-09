@@ -27,6 +27,16 @@ type Config struct {
 	KeyFile    string
 	KeyLogFile string
 	LogLevel   string
+	ServeDirs  map[string]string
+}
+
+// serveFlag implements flag.Value for repeatable -serve flags.
+type serveFlag []string
+
+func (f *serveFlag) String() string { return strings.Join(*f, " ") }
+func (f *serveFlag) Set(value string) error {
+	*f = append(*f, value)
+	return nil
 }
 
 var (
@@ -47,6 +57,8 @@ func newConfig() *Config {
 	certFile := flag.String("tls-cert-file", "", "Path to TLS certificate file")
 	keyFile := flag.String("tls-key-file", "", "Path to TLS key file")
 	logLevel := flag.String("log-level", "", "Log level (debug, info, warn, error, none)")
+	var serve serveFlag
+	flag.Var(&serve, "serve", "Serve static files from directory at URL prefix (prefix=directory, repeatable)")
 
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "Usage:")
@@ -56,6 +68,7 @@ func newConfig() *Config {
 		fmt.Fprintf(os.Stderr, "  HTTPS_ADDR\n\tAddress to bind the HTTPS server socket\n")
 		fmt.Fprintf(os.Stderr, "  TLS_CERT_FILE\n\tPath to TLS certificate file\n")
 		fmt.Fprintf(os.Stderr, "  TLS_KEY_FILE\n\tPath to TLS key file\n")
+		fmt.Fprintf(os.Stderr, "  SERVE\n\tServe static files (space-separated prefix=directory pairs)\n")
 		fmt.Fprintf(os.Stderr, "  ENV_*\n\tEnvironment variables to be used as context info in the echo response\n")
 		fmt.Fprintf(os.Stderr, "  SSLKEYLOGFILE\n\tPath to write the TLS master secret log file\n")
 	}
@@ -80,6 +93,7 @@ func newConfig() *Config {
 		KeyFile:    getEnv("TLS_KEY_FILE", *keyFile, ""),
 		KeyLogFile: os.Getenv("SSLKEYLOGFILE"),
 		LogLevel:   getEnv("LOG_LEVEL", *logLevel, "debug"),
+		ServeDirs:  parseServeDirs(serve),
 	}
 }
 
@@ -133,6 +147,43 @@ func parseEnvContext() {
 	}
 }
 
+// parseServeDirs parses "prefix=path" entries from -serve flags or the SERVE environment variable.
+func parseServeDirs(flagValues serveFlag) map[string]string {
+	var entries []string
+
+	if len(flagValues) > 0 {
+		entries = flagValues
+	} else if envValue, exists := os.LookupEnv("SERVE"); exists {
+		entries = strings.Fields(envValue)
+	}
+
+	if len(entries) == 0 {
+		return nil
+	}
+
+	dirs := map[string]string{}
+	for _, entry := range entries {
+		parts := strings.SplitN(entry, "=", 2)
+		if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+			slog.Warn("Ignoring invalid serve entry, expected prefix=path", "entry", entry)
+			continue
+		}
+
+		prefix := parts[0]
+		// Ensure prefix starts with /.
+		if !strings.HasPrefix(prefix, "/") {
+			prefix = "/" + prefix
+		}
+
+		dirs[prefix] = parts[1]
+	}
+
+	if len(dirs) == 0 {
+		return nil
+	}
+	return dirs
+}
+
 func main() {
 	config := newConfig()
 
@@ -141,7 +192,11 @@ func main() {
 	setupFilesystem(config.Live)
 	parseEnvContext()
 
-	stop, errChan, err := server.Start(files, envContext, config.HTTPAddr, config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
+	for prefix, dir := range config.ServeDirs {
+		slog.Info("Serving static files", "prefix", prefix, "path", dir)
+	}
+
+	stop, errChan, err := server.Start(files, envContext, config.ServeDirs, config.HTTPAddr, config.HTTPSAddr, config.CertFile, config.KeyFile, config.KeyLogFile)
 	if err != nil {
 		slog.Error("Failed to start servers", "error", err)
 		os.Exit(1)

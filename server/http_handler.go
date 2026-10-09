@@ -37,21 +37,36 @@ func (r *patternByteReader) Read(p []byte) (int, error) {
 }
 
 type HTTPHandler struct {
-	files      fs.FS
-	envContext map[string]string
+	files         fs.FS
+	envContext    map[string]string
+	serveHandlers map[string]http.Handler
 }
 
 // statusCode holds the persisted HTTP status code for /status responses.
 var statusCode int32 = http.StatusOK
 
-func NewHTTPHandler(files fs.FS, envContext map[string]string) *HTTPHandler {
+func NewHTTPHandler(files fs.FS, envContext map[string]string, serveDirs map[string]string) *HTTPHandler {
+	handlers := make(map[string]http.Handler, len(serveDirs))
+	for prefix, path := range serveDirs {
+		p := path
+		pfx := prefix
+		handlers[pfx] = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join(p, strings.TrimPrefix(r.URL.Path, pfx)))
+		})
+	}
+
 	return &HTTPHandler{
-		files:      files,
-		envContext: envContext,
+		files:         files,
+		envContext:    envContext,
+		serveHandlers: handlers,
 	}
 }
 
 func (h *HTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if h.serveStaticFile(w, r) {
+		return
+	}
+
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/status"):
 		h.statusHandler(w, r)
@@ -417,6 +432,27 @@ func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 		slog.Error("Error executing template", "error", err)
 		http.Error(w, "Error executing template", http.StatusInternalServerError)
 	}
+}
+
+func (h *HTTPHandler) serveStaticFile(w http.ResponseWriter, r *http.Request) bool {
+	for prefix, handler := range h.serveHandlers {
+		if strings.HasSuffix(prefix, "/") {
+			// Directory: match by prefix.
+			if strings.HasPrefix(r.URL.Path, prefix) {
+				slog.Debug("Serving static file", "prefix", prefix, "url", r.URL.String())
+				handler.ServeHTTP(w, r)
+				return true
+			}
+		} else {
+			// Single file: match exactly.
+			if r.URL.Path == prefix {
+				slog.Debug("Serving static file", "prefix", prefix, "url", r.URL.String())
+				handler.ServeHTTP(w, r)
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // serverSentEventHandler implements a long polling server that periodically sends "ping" messages.

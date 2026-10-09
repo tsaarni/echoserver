@@ -15,8 +15,8 @@ import (
 )
 
 // Start starts HTTP and HTTPS servers.
-func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certFile, keyFile, keyLogFile string) (func(), chan error, error) {
-	handler := createMuxHandler(files, envContext)
+func Start(files fs.FS, envContext map[string]string, serveDirs map[string]string, httpAddr, httpsAddr, certFile, keyFile, keyLogFile string) (func(), chan error, error) {
+	handler := createMuxHandler(files, envContext, serveDirs)
 
 	wrappedHandler := MetricsMiddleware(handler)
 
@@ -64,8 +64,8 @@ func Start(files fs.FS, envContext map[string]string, httpAddr, httpsAddr, certF
 	return stop, errChannel, nil
 }
 
-func createMuxHandler(files fs.FS, envContext map[string]string) http.Handler {
-	httpHandler := NewHTTPHandler(files, envContext)
+func createMuxHandler(files fs.FS, envContext map[string]string, serveDirs map[string]string) http.Handler {
+	httpHandler := NewHTTPHandler(files, envContext, serveDirs)
 	grpcService := NewGRPCEchoService(envContext)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
