@@ -60,7 +60,7 @@ func (s *E2ETestSuite) SetupSuite() {
 	// Start echoserver.
 	files := os.DirFS(path.Join("../..", "apps"))
 	envContext := map[string]string{"ENV_E2E_TEST": "yes"}
-	stop, errChan, err := server.Start(files, envContext, httpAddr, httpsAddr, serverCertPath, serverKeyPath, "")
+	stop, errChan, err := server.Start(files, envContext, nil, httpAddr, httpsAddr, serverCertPath, serverKeyPath, "")
 	s.Require().NoError(err)
 	s.stop = stop
 
