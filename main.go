@@ -207,8 +207,8 @@ func main() {
 
 	// Block until a signal is received or an error occurs.
 	select {
-	case <-errChan:
-		slog.Error("Server error, shutting down")
+	case err := <-errChan:
+		slog.Error("Server error, shutting down", "error", err)
 	case sig := <-sigCh:
 		slog.Info("Signal received, shutting down", "signal", sig)
 		stop()

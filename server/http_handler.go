@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -385,13 +386,16 @@ func (h *HTTPHandler) templateHandler(w http.ResponseWriter, r *http.Request) {
 	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling template request", "url", r.URL.String())
 
-	relativePath := strings.TrimPrefix(r.URL.Path, "/apps/")
-	relativePath = filepath.Clean(relativePath)
-	if relativePath == "" || relativePath == "." {
+	relativePath, err := filepath.Rel("/", path.Clean("/"+strings.TrimPrefix(r.URL.Path, "/apps/")))
+	if err != nil {
+		http.Error(w, "Invalid path", http.StatusBadRequest)
+		return
+	}
+	if relativePath == "." {
 		relativePath = "index.html"
 	}
 
-	_, err := h.files.Open(relativePath)
+	_, err = h.files.Open(relativePath)
 	if err != nil {
 		slog.Error("Error opening file", "error", err)
 		http.Error(w, "File not found", http.StatusNotFound)
@@ -432,7 +436,11 @@ func (h *HTTPHandler) serveStaticFile(w http.ResponseWriter, r *http.Request) bo
 			continue
 		}
 
-		filePath := filepath.Join(target, strings.TrimPrefix(r.URL.Path, prefix))
+		rel, err := filepath.Rel("/", path.Clean("/"+strings.TrimPrefix(r.URL.Path, prefix)))
+		if err != nil {
+			continue
+		}
+		filePath := filepath.Join(target, rel)
 
 		info, err := os.Stat(filePath)
 		if err != nil || info.IsDir() {
