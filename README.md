@@ -58,11 +58,23 @@ The gRPC endpoint examples are given using the [`grpcurl`](https://github.com/fu
 
 <details>
 
+##### Parameters
+
+| Name            | Description                                                                                      | Default            |
+| --------------- | ------------------------------------------------------------------------------------------------ | ------------------ |
+| `compress`      | Compress the response with `gzip`, `br` or `zstd`. Comma-separated list, in order of preference. |                    |
+| `compress-mode` | `negotiate`: choose based on `Accept-Encoding`. `force`: always use the first encoding.          | `negotiate`        |
+| `content-type`  | Set the response `Content-Type`.                                                                 | `application/json` |
+
+In `negotiate` mode, the encoding the client prefers is used, or the first one in `compress` on a tie.
+If the client accepts none of them, the response is not compressed.
+
 ##### Responses
 
-| Status | Description                     |
-| ------ | ------------------------------- |
-| 200 OK | Request details in JSON format. |
+| Status          | Description                     |
+| --------------- | ------------------------------- |
+| 200 OK          | Request details in JSON format. |
+| 400 Bad Request | Invalid parameter.              |
 
 Following fields is included in the response:
 
@@ -145,6 +157,18 @@ $ http --cert test/testdata/certs/client.pem --cert-key test/testdata/certs/clie
   },
   "url": "/foobar"
 }
+```
+
+Compress with Brotli or gzip, preferring Brotli:
+
+```console
+$ http http://localhost:8080/foobar?compress=br,gzip Accept-Encoding:gzip,br
+```
+
+Always compress with gzip, and set content type to CSV:
+
+```console
+$ http http://localhost:8080/foobar?compress=gzip\&compress-mode=force\&content-type=text/csv
 ```
 
 </details>
@@ -363,16 +387,24 @@ The response body consists of a sequence of bytes from 1 to 256.
 
 ##### Parameters
 
-| Name     | Description                                                                           | Default |
-| -------- | ------------------------------------------------------------------------------------- | ------- |
-| bytes    | Number of bytes to download (integer)                                                 | 1048576 |
-| throttle | Throttle the download speed to bytes/sec (integer with optional suffix "K", "M", "G") |         |
+| Name            | Description                                                                                      | Default                    |
+| --------------- | ------------------------------------------------------------------------------------------------ | -------------------------- |
+| `bytes`         | Number of bytes to download (integer)                                                            | 1048576                    |
+| `throttle`      | Throttle the download speed to bytes/sec (integer with optional suffix "K", "M", "G")            |                            |
+| `compress`      | Compress the response with `gzip`, `br` or `zstd`. Comma-separated list, in order of preference. |                            |
+| `compress-mode` | `negotiate`: choose based on `Accept-Encoding`. `force`: always use the first encoding.          | `negotiate`                |
+| `content-type`  | Set the response `Content-Type`.                                                                 | `application/octet-stream` |
+
+In `negotiate` mode, the encoding the client prefers is used, or the first one in `compress` on a tie.
+If the client accepts none of them, the response is not compressed.
+`bytes` and `throttle` refer to the size before compression.
 
 ##### Responses
 
-| Status | Description                |
-| ------ | -------------------------- |
-| 200 OK | File download in progress. |
+| Status          | Description                |
+| --------------- | -------------------------- |
+| 200 OK          | File download in progress. |
+| 400 Bad Request | Invalid parameter.         |
 
 ##### Example
 
@@ -403,6 +435,12 @@ Download a 10MB file while throttling the upload speed to 1MB/s at the server si
 
 ```sh
 $ http --download http://localhost:8080/download?bytes=10M\&throttle=1M --output download.bin
+```
+
+Download 10MB compressed with zstd, as `text/plain`:
+
+```sh
+$ curl -H "Accept-Encoding: zstd" -o download.bin.zst "http://localhost:8080/download?bytes=10M&compress=zstd&content-type=text/plain"
 ```
 
 </details>

@@ -4,6 +4,7 @@ package e2e
 
 import (
 	"bufio"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,9 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/andybalholm/brotli"
+	"github.com/klauspost/compress/zstd"
 )
 
 func (s *E2ETestSuite) TestHTTPEcho() {
@@ -130,6 +134,42 @@ func (s *E2ETestSuite) TestHTTPDownload() {
 	body, err := io.ReadAll(resp.Body)
 	s.NoError(err)
 	s.Len(body, 100)
+}
+
+func (s *E2ETestSuite) TestHTTPCompression() {
+	for _, encoding := range []string{"gzip", "br", "zstd"} {
+		s.Run(encoding, func() {
+			req, err := http.NewRequest("GET", fmt.Sprintf("http://%s/test?compress=gzip,br,zstd", httpAddr), nil)
+			s.Require().NoError(err)
+			// Setting Accept-Encoding explicitly disables transparent decompression in the client.
+			req.Header.Set("Accept-Encoding", encoding)
+			resp, err := s.httpClient.Do(req)
+			s.Require().NoError(err)
+			defer resp.Body.Close()
+
+			s.Equal(http.StatusOK, resp.StatusCode)
+			s.Equal(encoding, resp.Header.Get("Content-Encoding"))
+			s.Equal("Accept-Encoding", resp.Header.Get("Vary"))
+
+			var body io.Reader
+			switch encoding {
+			case "gzip":
+				body, err = gzip.NewReader(resp.Body)
+				s.Require().NoError(err)
+			case "br":
+				body = brotli.NewReader(resp.Body)
+			case "zstd":
+				zr, err := zstd.NewReader(resp.Body)
+				s.Require().NoError(err)
+				defer zr.Close()
+				body = zr
+			}
+
+			var data map[string]any
+			s.Require().NoError(json.NewDecoder(body).Decode(&data))
+			s.Equal("/test?compress=gzip,br,zstd", data["url"])
+		})
+	}
 }
 
 func (s *E2ETestSuite) TestHTTPMetrics() {

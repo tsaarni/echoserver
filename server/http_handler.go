@@ -85,6 +85,14 @@ func (h *HTTPHandler) echoHandler(w http.ResponseWriter, r *http.Request) {
 	// #nosec G706 // gosec: Log injection via taint analysis
 	slog.Debug("Handling echo request", "method", r.Method, "url", r.URL.String(), "remote", r.RemoteAddr)
 
+	w, done, err := compressResponse(w, r)
+	if err != nil {
+		// #nosec G705 // gosec: XSS via taint analysis
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer done()
+
 	w.Header().Set("Content-Type", "application/json")
 
 	jsonData, err := h.createEchoResponseBody(r)
@@ -605,6 +613,14 @@ func (h *HTTPHandler) downloadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w, done, err := compressResponse(w, r)
+	if err != nil {
+		// #nosec G705 // gosec: XSS via taint analysis
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	defer done()
+
 	downloadBytes := int64(1024 * 1024) // Default file size of 1MB unless overridden by query parameter.
 	if size := r.URL.Query().Get("bytes"); size != "" {
 		parsedSize, err := parseUnit(size)
@@ -715,6 +731,10 @@ func throttledCopy(dst io.Writer, src io.Reader, total int64, throttle int64) (w
 				return copied, writeErr
 			}
 			if throttle > 0 {
+				// Deliver each chunk immediately, also when the response is compressed.
+				if flusher, ok := dst.(http.Flusher); ok {
+					flusher.Flush()
+				}
 				elapsed := time.Since(start)
 				expected := time.Duration(copied) * time.Second / time.Duration(throttle)
 				if expected > elapsed {
