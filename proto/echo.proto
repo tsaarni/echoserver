@@ -5,8 +5,20 @@ package echo;
 option go_package = "github.com/tsaarni/echoserver/proto";
 
 service EchoService {
+  // Unary: returns details about the request.
   rpc Echo(EchoRequest) returns (EchoResponse);
+
+  // Server streaming: counts down from start to zero, one message per second.
   rpc EchoCountdown(EchoCountdownRequest) returns (stream EchoCountdownResponse);
+
+  // Server streaming: sends the requested number of bytes.
+  rpc EchoDownload(EchoDownloadRequest) returns (stream EchoDownloadResponse);
+
+  // Client streaming: counts received bytes and responds once after the client has sent all messages.
+  rpc EchoUpload(stream EchoUploadRequest) returns (EchoUploadResponse);
+
+  // Bidirectional streaming: acknowledges each received message.
+  rpc EchoStream(stream EchoStreamRequest) returns (stream EchoStreamResponse);
 }
 
 message EchoRequest {
@@ -48,4 +60,37 @@ message EchoCountdownRequest {
 
 message EchoCountdownResponse {
   int32 count = 1;
+}
+
+message EchoDownloadRequest {
+  // Total payload bytes to send. Default 1 MiB.
+  int64 bytes = 1;
+  // Payload bytes per message. Default 16 KiB.
+  int64 message_bytes = 2;
+  // Limit the sending rate to bytes/sec. Default unlimited.
+  int64 throttle = 3;
+}
+
+message EchoDownloadResponse {
+  // Repeating pattern of bytes 0..255, continuing across messages.
+  bytes payload = 1;
+}
+
+message EchoUploadRequest {
+  bytes payload = 1;
+}
+
+message EchoUploadResponse {
+  int64 messages = 1;
+  int64 total_bytes = 2;
+}
+
+message EchoStreamRequest {
+  bytes payload = 1;
+}
+
+message EchoStreamResponse {
+  int64 sequence = 1;
+  int64 message_bytes = 2;
+  int64 total_bytes = 3;
 }

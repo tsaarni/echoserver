@@ -2,15 +2,18 @@ package server
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"google.golang.org/grpc/stats"
 )
 
 var (
@@ -170,4 +173,77 @@ func (rw *responseWriterWrapper) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 		return hj.Hijack()
 	}
 	return nil, nil, fmt.Errorf("hijack not supported")
+}
+
+// gRPC byte metrics. Labels match the go-grpc-middleware message counters.
+var (
+	grpcMsgReceivedBytes = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "grpc_server_msg_received_bytes_total",
+			Help: "Total number of gRPC message bytes received, including the 5-byte message header.",
+		},
+		[]string{"grpc_type", "grpc_service", "grpc_method"},
+	)
+
+	grpcMsgSentBytes = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "grpc_server_msg_sent_bytes_total",
+			Help: "Total number of gRPC message bytes sent, including the 5-byte message header.",
+		},
+		[]string{"grpc_type", "grpc_service", "grpc_method"},
+	)
+)
+
+// grpcBytesStatsHandler counts gRPC message bytes as seen on the wire.
+// Only complete messages are counted.
+type grpcBytesStatsHandler struct{}
+
+// grpcCallLabels is stored in the RPC context by TagRPC and completed by the Begin event.
+type grpcCallLabels struct {
+	typ, service, method string
+}
+
+type grpcCallLabelsKey struct{}
+
+func (grpcBytesStatsHandler) TagRPC(ctx context.Context, info *stats.RPCTagInfo) context.Context {
+	service, method, ok := strings.Cut(strings.TrimPrefix(info.FullMethodName, "/"), "/")
+	if !ok {
+		service, method = "unknown", "unknown"
+	}
+	return context.WithValue(ctx, grpcCallLabelsKey{}, &grpcCallLabels{service: service, method: method})
+}
+
+func (grpcBytesStatsHandler) HandleRPC(ctx context.Context, s stats.RPCStats) {
+	labels, ok := ctx.Value(grpcCallLabelsKey{}).(*grpcCallLabels)
+	if !ok {
+		return
+	}
+	switch s := s.(type) {
+	case *stats.Begin:
+		labels.typ = grpcType(s.IsClientStream, s.IsServerStream)
+	case *stats.InPayload:
+		grpcMsgReceivedBytes.WithLabelValues(labels.typ, labels.service, labels.method).Add(float64(s.WireLength))
+	case *stats.OutPayload:
+		grpcMsgSentBytes.WithLabelValues(labels.typ, labels.service, labels.method).Add(float64(s.WireLength))
+	}
+}
+
+func (grpcBytesStatsHandler) TagConn(ctx context.Context, _ *stats.ConnTagInfo) context.Context {
+	return ctx
+}
+
+func (grpcBytesStatsHandler) HandleConn(context.Context, stats.ConnStats) {}
+
+// grpcType returns the RPC type with the same values as go-grpc-middleware.
+func grpcType(clientStream, serverStream bool) string {
+	switch {
+	case clientStream && serverStream:
+		return "bidi_stream"
+	case clientStream:
+		return "client_stream"
+	case serverStream:
+		return "server_stream"
+	default:
+		return "unary"
+	}
 }

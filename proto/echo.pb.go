@@ -433,6 +433,314 @@ func (x *EchoCountdownResponse) GetCount() int32 {
 	return 0
 }
 
+type EchoDownloadRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Total payload bytes to send. Default 1 MiB.
+	Bytes int64 `protobuf:"varint,1,opt,name=bytes,proto3" json:"bytes,omitempty"`
+	// Payload bytes per message. Default 16 KiB.
+	MessageBytes int64 `protobuf:"varint,2,opt,name=message_bytes,json=messageBytes,proto3" json:"message_bytes,omitempty"`
+	// Limit the sending rate to bytes/sec. Default unlimited.
+	Throttle      int64 `protobuf:"varint,3,opt,name=throttle,proto3" json:"throttle,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EchoDownloadRequest) Reset() {
+	*x = EchoDownloadRequest{}
+	mi := &file_echo_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EchoDownloadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EchoDownloadRequest) ProtoMessage() {}
+
+func (x *EchoDownloadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_echo_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EchoDownloadRequest.ProtoReflect.Descriptor instead.
+func (*EchoDownloadRequest) Descriptor() ([]byte, []int) {
+	return file_echo_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *EchoDownloadRequest) GetBytes() int64 {
+	if x != nil {
+		return x.Bytes
+	}
+	return 0
+}
+
+func (x *EchoDownloadRequest) GetMessageBytes() int64 {
+	if x != nil {
+		return x.MessageBytes
+	}
+	return 0
+}
+
+func (x *EchoDownloadRequest) GetThrottle() int64 {
+	if x != nil {
+		return x.Throttle
+	}
+	return 0
+}
+
+type EchoDownloadResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// Repeating pattern of bytes 0..255, continuing across messages.
+	Payload       []byte `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EchoDownloadResponse) Reset() {
+	*x = EchoDownloadResponse{}
+	mi := &file_echo_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EchoDownloadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EchoDownloadResponse) ProtoMessage() {}
+
+func (x *EchoDownloadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_echo_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EchoDownloadResponse.ProtoReflect.Descriptor instead.
+func (*EchoDownloadResponse) Descriptor() ([]byte, []int) {
+	return file_echo_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *EchoDownloadResponse) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+type EchoUploadRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Payload       []byte                 `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EchoUploadRequest) Reset() {
+	*x = EchoUploadRequest{}
+	mi := &file_echo_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EchoUploadRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EchoUploadRequest) ProtoMessage() {}
+
+func (x *EchoUploadRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_echo_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EchoUploadRequest.ProtoReflect.Descriptor instead.
+func (*EchoUploadRequest) Descriptor() ([]byte, []int) {
+	return file_echo_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *EchoUploadRequest) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+type EchoUploadResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Messages      int64                  `protobuf:"varint,1,opt,name=messages,proto3" json:"messages,omitempty"`
+	TotalBytes    int64                  `protobuf:"varint,2,opt,name=total_bytes,json=totalBytes,proto3" json:"total_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EchoUploadResponse) Reset() {
+	*x = EchoUploadResponse{}
+	mi := &file_echo_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EchoUploadResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EchoUploadResponse) ProtoMessage() {}
+
+func (x *EchoUploadResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_echo_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EchoUploadResponse.ProtoReflect.Descriptor instead.
+func (*EchoUploadResponse) Descriptor() ([]byte, []int) {
+	return file_echo_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *EchoUploadResponse) GetMessages() int64 {
+	if x != nil {
+		return x.Messages
+	}
+	return 0
+}
+
+func (x *EchoUploadResponse) GetTotalBytes() int64 {
+	if x != nil {
+		return x.TotalBytes
+	}
+	return 0
+}
+
+type EchoStreamRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Payload       []byte                 `protobuf:"bytes,1,opt,name=payload,proto3" json:"payload,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EchoStreamRequest) Reset() {
+	*x = EchoStreamRequest{}
+	mi := &file_echo_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EchoStreamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EchoStreamRequest) ProtoMessage() {}
+
+func (x *EchoStreamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_echo_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EchoStreamRequest.ProtoReflect.Descriptor instead.
+func (*EchoStreamRequest) Descriptor() ([]byte, []int) {
+	return file_echo_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *EchoStreamRequest) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
+type EchoStreamResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Sequence      int64                  `protobuf:"varint,1,opt,name=sequence,proto3" json:"sequence,omitempty"`
+	MessageBytes  int64                  `protobuf:"varint,2,opt,name=message_bytes,json=messageBytes,proto3" json:"message_bytes,omitempty"`
+	TotalBytes    int64                  `protobuf:"varint,3,opt,name=total_bytes,json=totalBytes,proto3" json:"total_bytes,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *EchoStreamResponse) Reset() {
+	*x = EchoStreamResponse{}
+	mi := &file_echo_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *EchoStreamResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*EchoStreamResponse) ProtoMessage() {}
+
+func (x *EchoStreamResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_echo_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use EchoStreamResponse.ProtoReflect.Descriptor instead.
+func (*EchoStreamResponse) Descriptor() ([]byte, []int) {
+	return file_echo_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *EchoStreamResponse) GetSequence() int64 {
+	if x != nil {
+		return x.Sequence
+	}
+	return 0
+}
+
+func (x *EchoStreamResponse) GetMessageBytes() int64 {
+	if x != nil {
+		return x.MessageBytes
+	}
+	return 0
+}
+
+func (x *EchoStreamResponse) GetTotalBytes() int64 {
+	if x != nil {
+		return x.TotalBytes
+	}
+	return 0
+}
+
 var File_echo_proto protoreflect.FileDescriptor
 
 const file_echo_proto_rawDesc = "" +
@@ -474,10 +782,34 @@ const file_echo_proto_rawDesc = "" +
 	"\x14EchoCountdownRequest\x12\x14\n" +
 	"\x05start\x18\x01 \x01(\x05R\x05start\"-\n" +
 	"\x15EchoCountdownResponse\x12\x14\n" +
-	"\x05count\x18\x01 \x01(\x05R\x05count2\x88\x01\n" +
+	"\x05count\x18\x01 \x01(\x05R\x05count\"l\n" +
+	"\x13EchoDownloadRequest\x12\x14\n" +
+	"\x05bytes\x18\x01 \x01(\x03R\x05bytes\x12#\n" +
+	"\rmessage_bytes\x18\x02 \x01(\x03R\fmessageBytes\x12\x1a\n" +
+	"\bthrottle\x18\x03 \x01(\x03R\bthrottle\"0\n" +
+	"\x14EchoDownloadResponse\x12\x18\n" +
+	"\apayload\x18\x01 \x01(\fR\apayload\"-\n" +
+	"\x11EchoUploadRequest\x12\x18\n" +
+	"\apayload\x18\x01 \x01(\fR\apayload\"Q\n" +
+	"\x12EchoUploadResponse\x12\x1a\n" +
+	"\bmessages\x18\x01 \x01(\x03R\bmessages\x12\x1f\n" +
+	"\vtotal_bytes\x18\x02 \x01(\x03R\n" +
+	"totalBytes\"-\n" +
+	"\x11EchoStreamRequest\x12\x18\n" +
+	"\apayload\x18\x01 \x01(\fR\apayload\"v\n" +
+	"\x12EchoStreamResponse\x12\x1a\n" +
+	"\bsequence\x18\x01 \x01(\x03R\bsequence\x12#\n" +
+	"\rmessage_bytes\x18\x02 \x01(\x03R\fmessageBytes\x12\x1f\n" +
+	"\vtotal_bytes\x18\x03 \x01(\x03R\n" +
+	"totalBytes2\xd9\x02\n" +
 	"\vEchoService\x12-\n" +
 	"\x04Echo\x12\x11.echo.EchoRequest\x1a\x12.echo.EchoResponse\x12J\n" +
-	"\rEchoCountdown\x12\x1a.echo.EchoCountdownRequest\x1a\x1b.echo.EchoCountdownResponse0\x01B%Z#github.com/tsaarni/echoserver/protob\x06proto3"
+	"\rEchoCountdown\x12\x1a.echo.EchoCountdownRequest\x1a\x1b.echo.EchoCountdownResponse0\x01\x12G\n" +
+	"\fEchoDownload\x12\x19.echo.EchoDownloadRequest\x1a\x1a.echo.EchoDownloadResponse0\x01\x12A\n" +
+	"\n" +
+	"EchoUpload\x12\x17.echo.EchoUploadRequest\x1a\x18.echo.EchoUploadResponse(\x01\x12C\n" +
+	"\n" +
+	"EchoStream\x12\x17.echo.EchoStreamRequest\x1a\x18.echo.EchoStreamResponse(\x010\x01B%Z#github.com/tsaarni/echoserver/protob\x06proto3"
 
 var (
 	file_echo_proto_rawDescOnce sync.Once
@@ -491,7 +823,7 @@ func file_echo_proto_rawDescGZIP() []byte {
 	return file_echo_proto_rawDescData
 }
 
-var file_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_echo_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_echo_proto_goTypes = []any{
 	(*EchoRequest)(nil),           // 0: echo.EchoRequest
 	(*EchoResponse)(nil),          // 1: echo.EchoResponse
@@ -500,24 +832,36 @@ var file_echo_proto_goTypes = []any{
 	(*TLSCertificateInfo)(nil),    // 4: echo.TLSCertificateInfo
 	(*EchoCountdownRequest)(nil),  // 5: echo.EchoCountdownRequest
 	(*EchoCountdownResponse)(nil), // 6: echo.EchoCountdownResponse
-	nil,                           // 7: echo.EchoResponse.HeadersEntry
-	nil,                           // 8: echo.EchoResponse.EnvEntry
+	(*EchoDownloadRequest)(nil),   // 7: echo.EchoDownloadRequest
+	(*EchoDownloadResponse)(nil),  // 8: echo.EchoDownloadResponse
+	(*EchoUploadRequest)(nil),     // 9: echo.EchoUploadRequest
+	(*EchoUploadResponse)(nil),    // 10: echo.EchoUploadResponse
+	(*EchoStreamRequest)(nil),     // 11: echo.EchoStreamRequest
+	(*EchoStreamResponse)(nil),    // 12: echo.EchoStreamResponse
+	nil,                           // 13: echo.EchoResponse.HeadersEntry
+	nil,                           // 14: echo.EchoResponse.EnvEntry
 }
 var file_echo_proto_depIdxs = []int32{
-	7, // 0: echo.EchoResponse.headers:type_name -> echo.EchoResponse.HeadersEntry
-	3, // 1: echo.EchoResponse.tls_info:type_name -> echo.TLSInfo
-	8, // 2: echo.EchoResponse.env:type_name -> echo.EchoResponse.EnvEntry
-	4, // 3: echo.TLSInfo.peer_certificates:type_name -> echo.TLSCertificateInfo
-	2, // 4: echo.EchoResponse.HeadersEntry.value:type_name -> echo.HeaderValues
-	0, // 5: echo.EchoService.Echo:input_type -> echo.EchoRequest
-	5, // 6: echo.EchoService.EchoCountdown:input_type -> echo.EchoCountdownRequest
-	1, // 7: echo.EchoService.Echo:output_type -> echo.EchoResponse
-	6, // 8: echo.EchoService.EchoCountdown:output_type -> echo.EchoCountdownResponse
-	7, // [7:9] is the sub-list for method output_type
-	5, // [5:7] is the sub-list for method input_type
-	5, // [5:5] is the sub-list for extension type_name
-	5, // [5:5] is the sub-list for extension extendee
-	0, // [0:5] is the sub-list for field type_name
+	13, // 0: echo.EchoResponse.headers:type_name -> echo.EchoResponse.HeadersEntry
+	3,  // 1: echo.EchoResponse.tls_info:type_name -> echo.TLSInfo
+	14, // 2: echo.EchoResponse.env:type_name -> echo.EchoResponse.EnvEntry
+	4,  // 3: echo.TLSInfo.peer_certificates:type_name -> echo.TLSCertificateInfo
+	2,  // 4: echo.EchoResponse.HeadersEntry.value:type_name -> echo.HeaderValues
+	0,  // 5: echo.EchoService.Echo:input_type -> echo.EchoRequest
+	5,  // 6: echo.EchoService.EchoCountdown:input_type -> echo.EchoCountdownRequest
+	7,  // 7: echo.EchoService.EchoDownload:input_type -> echo.EchoDownloadRequest
+	9,  // 8: echo.EchoService.EchoUpload:input_type -> echo.EchoUploadRequest
+	11, // 9: echo.EchoService.EchoStream:input_type -> echo.EchoStreamRequest
+	1,  // 10: echo.EchoService.Echo:output_type -> echo.EchoResponse
+	6,  // 11: echo.EchoService.EchoCountdown:output_type -> echo.EchoCountdownResponse
+	8,  // 12: echo.EchoService.EchoDownload:output_type -> echo.EchoDownloadResponse
+	10, // 13: echo.EchoService.EchoUpload:output_type -> echo.EchoUploadResponse
+	12, // 14: echo.EchoService.EchoStream:output_type -> echo.EchoStreamResponse
+	10, // [10:15] is the sub-list for method output_type
+	5,  // [5:10] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_echo_proto_init() }
@@ -531,7 +875,7 @@ func file_echo_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_echo_proto_rawDesc), len(file_echo_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

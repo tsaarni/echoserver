@@ -383,7 +383,7 @@ $ dd if=/dev/zero bs=10M count=1 | http http://localhost:8080/upload?throttle=1M
 Accepts GET requests and responds with a binary stream of bytes.
 The number of bytes can be specified with the `bytes` query parameter.
 The default size for the download is 1MB.
-The response body consists of a sequence of bytes from 1 to 256.
+The response body consists of a repeating pattern of bytes 0..255.
 
 ##### Parameters
 
@@ -455,24 +455,29 @@ This endpoint provides Prometheus-compatible metrics for monitoring the server.
 
 The following metrics are available:
 
-| Metric Name                      | Description                                                                |
-| -------------------------------- | -------------------------------------------------------------------------- |
-| `http_requests_total`            | Total number of HTTP requests received.                                    |
-| `http_request_duration_seconds`  | Duration of HTTP requests in seconds. q                                    |
-| `http_concurrent_requests`       | Current number of concurrent HTTP requests being handled.                  |
-| `http_connections_by_state`      | Current number of connections in each state (new, active, idle, hijacked). |
-| `http_response_size_bytes`       | Size of HTTP responses in bytes.                                           |
-| `http_request_size_bytes`        | Size of HTTP requests in bytes.                                            |
-| `http_errors_total`              | Total number of HTTP errors encountered.                                   |
-| `server_uptime_seconds`          | Total uptime of the server in seconds.                                     |
-| `grpc_server_handled_total`      | Total number of gRPC requests handled.                                     |
-| `grpc_server_msg_received_total` | Total number of gRPC messages received.                                    |
-| `grpc_server_msg_sent_total`     | Total number of gRPC messages sent.                                        |
-| `grpc_server_started_total`      | Total number of gRPC requests started.                                     |
+| Metric Name                            | Description                                                                |
+| -------------------------------------- | -------------------------------------------------------------------------- |
+| `http_requests_total`                  | Total number of HTTP requests received.                                    |
+| `http_request_duration_seconds`        | Duration of HTTP requests in seconds.                                      |
+| `http_concurrent_requests`             | Current number of concurrent HTTP requests being handled.                  |
+| `http_connections_by_state`            | Current number of connections in each state (new, active, idle, hijacked). |
+| `http_response_size_bytes`             | Size of HTTP responses in bytes.                                           |
+| `http_request_size_bytes`              | Size of HTTP requests in bytes.                                            |
+| `http_errors_total`                    | Total number of HTTP errors encountered.                                   |
+| `server_uptime_seconds`                | Total uptime of the server in seconds.                                     |
+| `grpc_server_handled_total`            | Total number of gRPC requests handled.                                     |
+| `grpc_server_msg_received_total`       | Total number of gRPC messages received. See note below.                    |
+| `grpc_server_msg_sent_total`           | Total number of gRPC messages sent.                                        |
+| `grpc_server_started_total`            | Total number of gRPC requests started.                                     |
+| `grpc_server_msg_received_bytes_total` | Total number of gRPC message bytes received. See note below.               |
+| `grpc_server_msg_sent_bytes_total`     | Total number of gRPC message bytes sent. See note below.                   |
 
 Additionally, the Prometheus client exposes default Go runtime metrics via the Go collector, including metrics like `go_goroutines` and `go_threads`. For more details, see the [go_collector.go](https://github.com/prometheus/client_golang/blob/main/prometheus/go_collector.go) in the Prometheus Go client.
 
-Grpc metrics are provided by [go-grpc-middleware](https://github.com/grpc-ecosystem/go-grpc-middleware).
+Grpc metrics are provided by [go-grpc-middleware](https://github.com/grpc-ecosystem/go-grpc-middleware), except the byte counters.
+`grpc_server_msg_received_total` also counts the final receive that returns end of stream or an error, so it is one higher than the number of messages for client and bidirectional streams.
+The byte counters count wire bytes: the protobuf message (compressed, if gRPC compression is used) plus the 5-byte gRPC message header.
+Only complete messages are counted, so bytes of a message that is cut off in the middle are not included.
 
 ##### Responses
 
@@ -601,6 +606,97 @@ $ grpcurl -cacert test/testdata/certs/ca.pem -cert test/testdata/certs/client.pe
 }
 {
   "count": 0
+}
+```
+
+</details>
+
+#### <code>/grpc.EchoService/EchoDownload</code> - A gRPC server streaming endpoint that sends the requested number of bytes.
+
+<details>
+
+##### Description
+
+Sends a stream of messages carrying a repeating pattern of bytes 0..255, continuing across messages.
+The last message is shorter if `bytes` is not a multiple of `message_bytes`.
+For the service definition see [`proto/echo.proto`](proto/echo.proto).
+The service supports gRPC reflection.
+
+##### Parameters
+
+| Name            | Description                                     | Default   |
+| --------------- | ----------------------------------------------- | --------- |
+| `bytes`         | Total payload bytes to send.                    | 1048576   |
+| `message_bytes` | Payload bytes per message.                      | 16384     |
+| `throttle`      | Limit the sending rate to bytes/sec.            | unlimited |
+
+Zero means the default. Negative values are rejected with `INVALID_ARGUMENT`.
+
+##### Example
+
+The payload is base64 encoded in grpcurl JSON output.
+
+```sh
+$ grpcurl -plaintext -d '{"bytes": 8, "message_bytes": 4}' localhost:8080 echo.EchoService/EchoDownload
+{
+  "payload": "AAECAw=="
+}
+{
+  "payload": "BAUGBw=="
+}
+```
+
+</details>
+
+#### <code>/grpc.EchoService/EchoUpload</code> - A gRPC client streaming endpoint that counts received bytes.
+
+<details>
+
+##### Description
+
+Accepts a stream of messages with payloads of any size.
+After the client has sent all messages, responds once with the number of messages and total payload bytes received.
+For the service definition see [`proto/echo.proto`](proto/echo.proto).
+The service supports gRPC reflection.
+
+##### Example
+
+The payload is base64 encoded in grpcurl JSON input.
+
+```sh
+$ printf '{"payload":"aGVsbG8="}\n{"payload":"d29ybGQh"}\n' | grpcurl -plaintext -emit-defaults -d @ localhost:8080 echo.EchoService/EchoUpload
+{
+  "messages": "2",
+  "totalBytes": "11"
+}
+```
+
+</details>
+
+#### <code>/grpc.EchoService/EchoStream</code> - A gRPC bidirectional streaming endpoint that acknowledges each message.
+
+<details>
+
+##### Description
+
+Accepts a stream of messages with payloads of any size.
+Responds to each received message with its sequence number, payload size and the total payload bytes received so far.
+For the service definition see [`proto/echo.proto`](proto/echo.proto).
+The service supports gRPC reflection.
+
+##### Example
+
+```sh
+$ printf '{"payload":"aGVsbG8="}\n{"payload":"d29ybGQh"}\n' | grpcurl -plaintext -emit-defaults -d @ localhost:8080 echo.EchoService/EchoStream
+{
+  "sequence": "1",
+  "messageBytes": "5",
+  "totalBytes": "5"
+}
+{
+  "sequence": "2",
+  "messageBytes": "6",
+  "totalBytes": "11"
 }
 ```
 

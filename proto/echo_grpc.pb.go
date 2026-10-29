@@ -21,14 +21,25 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	EchoService_Echo_FullMethodName          = "/echo.EchoService/Echo"
 	EchoService_EchoCountdown_FullMethodName = "/echo.EchoService/EchoCountdown"
+	EchoService_EchoDownload_FullMethodName  = "/echo.EchoService/EchoDownload"
+	EchoService_EchoUpload_FullMethodName    = "/echo.EchoService/EchoUpload"
+	EchoService_EchoStream_FullMethodName    = "/echo.EchoService/EchoStream"
 )
 
 // EchoServiceClient is the client API for EchoService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EchoServiceClient interface {
+	// Unary: returns details about the request.
 	Echo(ctx context.Context, in *EchoRequest, opts ...grpc.CallOption) (*EchoResponse, error)
+	// Server streaming: counts down from start to zero, one message per second.
 	EchoCountdown(ctx context.Context, in *EchoCountdownRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[EchoCountdownResponse], error)
+	// Server streaming: sends the requested number of bytes.
+	EchoDownload(ctx context.Context, in *EchoDownloadRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[EchoDownloadResponse], error)
+	// Client streaming: counts received bytes and responds once after the client has sent all messages.
+	EchoUpload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[EchoUploadRequest, EchoUploadResponse], error)
+	// Bidirectional streaming: acknowledges each received message.
+	EchoStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[EchoStreamRequest, EchoStreamResponse], error)
 }
 
 type echoServiceClient struct {
@@ -68,12 +79,65 @@ func (c *echoServiceClient) EchoCountdown(ctx context.Context, in *EchoCountdown
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EchoService_EchoCountdownClient = grpc.ServerStreamingClient[EchoCountdownResponse]
 
+func (c *echoServiceClient) EchoDownload(ctx context.Context, in *EchoDownloadRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[EchoDownloadResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EchoService_ServiceDesc.Streams[1], EchoService_EchoDownload_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[EchoDownloadRequest, EchoDownloadResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EchoService_EchoDownloadClient = grpc.ServerStreamingClient[EchoDownloadResponse]
+
+func (c *echoServiceClient) EchoUpload(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[EchoUploadRequest, EchoUploadResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EchoService_ServiceDesc.Streams[2], EchoService_EchoUpload_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[EchoUploadRequest, EchoUploadResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EchoService_EchoUploadClient = grpc.ClientStreamingClient[EchoUploadRequest, EchoUploadResponse]
+
+func (c *echoServiceClient) EchoStream(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[EchoStreamRequest, EchoStreamResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &EchoService_ServiceDesc.Streams[3], EchoService_EchoStream_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[EchoStreamRequest, EchoStreamResponse]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EchoService_EchoStreamClient = grpc.BidiStreamingClient[EchoStreamRequest, EchoStreamResponse]
+
 // EchoServiceServer is the server API for EchoService service.
 // All implementations must embed UnimplementedEchoServiceServer
 // for forward compatibility.
 type EchoServiceServer interface {
+	// Unary: returns details about the request.
 	Echo(context.Context, *EchoRequest) (*EchoResponse, error)
+	// Server streaming: counts down from start to zero, one message per second.
 	EchoCountdown(*EchoCountdownRequest, grpc.ServerStreamingServer[EchoCountdownResponse]) error
+	// Server streaming: sends the requested number of bytes.
+	EchoDownload(*EchoDownloadRequest, grpc.ServerStreamingServer[EchoDownloadResponse]) error
+	// Client streaming: counts received bytes and responds once after the client has sent all messages.
+	EchoUpload(grpc.ClientStreamingServer[EchoUploadRequest, EchoUploadResponse]) error
+	// Bidirectional streaming: acknowledges each received message.
+	EchoStream(grpc.BidiStreamingServer[EchoStreamRequest, EchoStreamResponse]) error
 	mustEmbedUnimplementedEchoServiceServer()
 }
 
@@ -89,6 +153,15 @@ func (UnimplementedEchoServiceServer) Echo(context.Context, *EchoRequest) (*Echo
 }
 func (UnimplementedEchoServiceServer) EchoCountdown(*EchoCountdownRequest, grpc.ServerStreamingServer[EchoCountdownResponse]) error {
 	return status.Error(codes.Unimplemented, "method EchoCountdown not implemented")
+}
+func (UnimplementedEchoServiceServer) EchoDownload(*EchoDownloadRequest, grpc.ServerStreamingServer[EchoDownloadResponse]) error {
+	return status.Error(codes.Unimplemented, "method EchoDownload not implemented")
+}
+func (UnimplementedEchoServiceServer) EchoUpload(grpc.ClientStreamingServer[EchoUploadRequest, EchoUploadResponse]) error {
+	return status.Error(codes.Unimplemented, "method EchoUpload not implemented")
+}
+func (UnimplementedEchoServiceServer) EchoStream(grpc.BidiStreamingServer[EchoStreamRequest, EchoStreamResponse]) error {
+	return status.Error(codes.Unimplemented, "method EchoStream not implemented")
 }
 func (UnimplementedEchoServiceServer) mustEmbedUnimplementedEchoServiceServer() {}
 func (UnimplementedEchoServiceServer) testEmbeddedByValue()                     {}
@@ -140,6 +213,31 @@ func _EchoService_EchoCountdown_Handler(srv interface{}, stream grpc.ServerStrea
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type EchoService_EchoCountdownServer = grpc.ServerStreamingServer[EchoCountdownResponse]
 
+func _EchoService_EchoDownload_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(EchoDownloadRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(EchoServiceServer).EchoDownload(m, &grpc.GenericServerStream[EchoDownloadRequest, EchoDownloadResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EchoService_EchoDownloadServer = grpc.ServerStreamingServer[EchoDownloadResponse]
+
+func _EchoService_EchoUpload_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EchoServiceServer).EchoUpload(&grpc.GenericServerStream[EchoUploadRequest, EchoUploadResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EchoService_EchoUploadServer = grpc.ClientStreamingServer[EchoUploadRequest, EchoUploadResponse]
+
+func _EchoService_EchoStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(EchoServiceServer).EchoStream(&grpc.GenericServerStream[EchoStreamRequest, EchoStreamResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type EchoService_EchoStreamServer = grpc.BidiStreamingServer[EchoStreamRequest, EchoStreamResponse]
+
 // EchoService_ServiceDesc is the grpc.ServiceDesc for EchoService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -157,6 +255,22 @@ var EchoService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "EchoCountdown",
 			Handler:       _EchoService_EchoCountdown_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "EchoDownload",
+			Handler:       _EchoService_EchoDownload_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "EchoUpload",
+			Handler:       _EchoService_EchoUpload_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "EchoStream",
+			Handler:       _EchoService_EchoStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "echo.proto",
