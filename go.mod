@@ -4,7 +4,7 @@ go 1.27
 
 require (
 	github.com/andybalholm/brotli v1.2.7
-	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
+	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.1
 	github.com/klauspost/compress v1.20.3
 	github.com/prometheus/client_golang v1.25.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
